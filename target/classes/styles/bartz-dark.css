@@ -1,0 +1,374 @@
+/* ============================================================
+ * BARTZ ANALYSER - TEMA DARK CUSTOMIZADO
+ * ============================================================
+ * Este CSS é carregado DEPOIS do tema PrimerDark do AtlantaFX.
+ * Ele sobrescreve algumas cores para manter a identidade visual
+ * do app Electron original (fundo #111111, cards #1B1B1B, etc.)
+ * ============================================================ */
+
+/* ----- ROOT: Fundo principal da janela ----- */
+.root {
+    /* Cor de fundo da janela inteira */
+    -fx-background-color: #111111;
+    /* Fonte padrão: Inter (mesma do app Electron) */
+    -fx-font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
+    /* Tamanho padrão do texto */
+    -fx-font-size: 13px;
+}
+
+/* ----- HEADER: Barra superior ----- */
+.header-bar {
+    /* Fundo mais claro que o root, como um card */
+    -fx-background-color: #1B1B1B;
+    /* Borda apenas embaixo, simulando border-bottom */
+    -fx-border-color: transparent transparent #2C2C2C transparent;
+    /* Largura da borda inferior: 1px */
+    -fx-border-width: 0 0 1 0;
+    /* Espaçamento interno (padding) */
+    -fx-padding: 12 24 12 24;
+}
+
+/* ----- KPI CARD: Cards de métricas ----- */
+.kpi-card {
+    /* Fundo do card */
+    -fx-background-color: #1B1B1B;
+    /* Borda ao redor do card */
+    -fx-border-color: #2C2C2C;
+    /* Largura da borda */
+    -fx-border-width: 1;
+    /* Cantos arredondados */
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    /* Espaçamento interno */
+    -fx-padding: 16;
+    /* Cursor de mão ao passar o mouse */
+    -fx-cursor: hand;
+}
+
+/* Efeito hover no KPI Card */
+.kpi-card:hover {
+    /* Borda mais clara quando o mouse está em cima */
+    -fx-border-color: #404040;
+}
+
+/* Título do KPI (texto secundário) */
+.kpi-title {
+    -fx-text-fill: #A7A7A7;
+    -fx-font-size: 12px;
+}
+
+/* ----- SETTINGS: Tela de Configurações ----- */
+
+/* Seção agrupada (o "box" que envolve os campos) */
+.settings-section {
+    -fx-background-color: #1B1B1B;
+    -fx-border-color: #2C2C2C;
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-padding: 20;
+}
+
+/* Cabeçalho da seção (Texto colorido com ícone) */
+.section-header {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    /* uppercase via código ou fonte */
+}
+
+/* Cores específicas das seções da imagem */
+.section-blue { -fx-text-fill: #3498DB; }
+.section-green { -fx-text-fill: #27AE60; }
+.section-purple { -fx-text-fill: #9B59B6; }
+
+/* Campo de caminho (Input maior e mais escuro) */
+.path-field {
+    -fx-background-color: #111111;
+    -fx-border-color: #2C2C2C;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-text-fill: #FFFFFF;
+    -fx-padding: 10;
+    -fx-font-family: "Consolas", monospace;
+    -fx-font-size: 13px;
+}
+
+/* Botão de pasta (o ícone de diretório ao lado do input) */
+.folder-btn {
+    -fx-background-color: #2C2C2C;
+    -fx-background-radius: 8;
+    -fx-pref-width: 40;
+    -fx-pref-height: 40;
+    -fx-cursor: hand;
+}
+
+.folder-btn:hover {
+    -fx-background-color: #404040;
+}
+
+/* Valor numérico do KPI */
+.kpi-value {
+    /* Texto branco, destaque */
+    -fx-text-fill: #FFFFFF;
+    /* Fonte grande */
+    -fx-font-size: 24px;
+    /* Negrito */
+    -fx-font-weight: bold;
+}
+
+/* Container do ícone do KPI */
+.kpi-icon-container {
+    /* Cantos arredondados no container do ícone */
+    -fx-background-radius: 8;
+    /* Espaçamento interno */
+    -fx-padding: 8;
+}
+
+/* ----- FILTER BAR: Barra de filtros ----- */
+.filter-bar {
+    /* Espaçamento interno */
+    -fx-padding: 0;
+}
+
+/* ComboBox customizado para tema dark */
+.combo-dark {
+    /* Fundo escuro do dropdown */
+    -fx-background-color: #1B1B1B;
+    /* Borda */
+    -fx-border-color: #2C2C2C;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    /* Texto branco */
+    -fx-text-fill: #FFFFFF;
+}
+
+/* TextField de busca */
+.search-field {
+    /* Fundo escuro */
+    -fx-background-color: #1B1B1B;
+    /* Borda */
+    -fx-border-color: #2C2C2C;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    /* Texto branco */
+    -fx-text-fill: #FFFFFF;
+    /* Cor do texto placeholder */
+    -fx-prompt-text-fill: #666666;
+}
+
+/* ----- TABELA: Estilo da TableView ----- */
+.table-container {
+    /* Fundo do container da tabela */
+    -fx-background-color: #1B1B1B;
+    /* Borda ao redor */
+    -fx-border-color: #2C2C2C;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-border-width: 1;
+}
+
+/* TableView: remove o fundo padrão cinza */
+.dark-table {
+    -fx-background-color: transparent;
+    -fx-control-inner-background: #1B1B1B;
+    -fx-control-inner-background-alt: #1B1B1B;
+}
+
+/* Cabeçalho da tabela */
+.dark-table .column-header {
+    -fx-background-color: #1B1B1B;
+    -fx-border-color: transparent transparent #2C2C2C transparent;
+}
+
+/* Texto do cabeçalho */
+.dark-table .column-header .label {
+    -fx-text-fill: #A7A7A7;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* Células da tabela */
+.dark-table .table-row-cell {
+    -fx-background-color: #1B1B1B;
+    -fx-border-color: transparent transparent #2C2C2C transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+/* Hover nas linhas da tabela */
+.dark-table .table-row-cell:hover {
+    -fx-background-color: #222222;
+}
+
+/* Linha selecionada */
+.dark-table .table-row-cell:selected {
+    -fx-background-color: #2C2C2C;
+}
+
+/* Texto das células */
+.dark-table .table-cell {
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 12px;
+    -fx-padding: 8 12 8 12;
+}
+
+/* Linhas vazias da tabela (sem dados) */
+.dark-table .table-row-cell:empty {
+    -fx-background-color: #1B1B1B;
+    -fx-border-color: transparent;
+}
+
+/* Remove a borda de foco padrão */
+.dark-table:focused {
+    -fx-background-color: transparent;
+}
+
+/* ----- STATUS BADGES ----- */
+.badge {
+    /* Cantos arredondados */
+    -fx-background-radius: 4;
+    /* Espaçamento interno */
+    -fx-padding: 2 8 2 8;
+    /* Texto pequeno e em negrito */
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+/* Badge de status OK */
+.badge-ok {
+    -fx-background-color: #27AE60;
+    -fx-text-fill: #FFFFFF;
+}
+
+/* Badge de status ERRO */
+.badge-erro {
+    -fx-background-color: #E74C3C;
+    -fx-text-fill: #FFFFFF;
+}
+
+/* Badge de FERRAGENS */
+.badge-ferragens {
+    -fx-background-color: #F39C12;
+    -fx-text-fill: #FFFFFF;
+}
+
+/* Badge de Auto-fix */
+.badge-autofix {
+    -fx-background-color: rgba(26, 188, 156, 0.15);
+    -fx-text-fill: #1ABC9C;
+    -fx-border-color: rgba(26, 188, 156, 0.3);
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+}
+
+/* Badge de Erro (inline na tabela) */
+.badge-error-tag {
+    -fx-background-color: rgba(231, 76, 60, 0.15);
+    -fx-text-fill: #E74C3C;
+    -fx-border-color: rgba(231, 76, 60, 0.3);
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+}
+
+/* ----- BOTÕES ----- */
+.btn-success {
+    -fx-background-color: #27AE60;
+    -fx-text-fill: #FFFFFF;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.btn-success:hover {
+    -fx-background-color: #219a52;
+}
+
+.btn-danger {
+    -fx-background-color: #E74C3C;
+    -fx-text-fill: #FFFFFF;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.btn-danger:hover {
+    -fx-background-color: #c0392b;
+}
+
+.btn-outline {
+    -fx-background-color: transparent;
+    -fx-text-fill: #FFFFFF;
+    -fx-border-color: #2C2C2C;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.btn-outline:hover {
+    -fx-background-color: #2C2C2C;
+}
+
+.btn-ghost {
+    -fx-background-color: transparent;
+    -fx-text-fill: #A7A7A7;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.btn-ghost:hover {
+    -fx-background-color: #2C2C2C;
+    -fx-text-fill: #FFFFFF;
+}
+
+/* ----- LOGO: Quadrado amarelo com "B" ----- */
+.logo-box {
+    -fx-background-color: #F1C40F;
+    -fx-background-radius: 6;
+    -fx-pref-width: 32;
+    -fx-pref-height: 32;
+    -fx-min-width: 32;
+    -fx-min-height: 32;
+    -fx-alignment: center;
+}
+
+.logo-text {
+    -fx-text-fill: #111111;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+/* Título da aplicação */
+.app-title {
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 18px;
+    -fx-font-weight: 600;
+}
+
+/* Texto muted (secundário) */
+.text-muted {
+    -fx-text-fill: #A7A7A7;
+    -fx-font-size: 12px;
+}
+
+/* ----- SCROLL BAR: Customizada para tema dark ----- */
+.scroll-bar {
+    -fx-background-color: #111111;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #2C2C2C;
+    -fx-background-radius: 4;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #404040;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-shape: "";
+    -fx-padding: 0;
+}
