@@ -69,8 +69,6 @@ public class HeaderBar extends HBox {
     // Referências aos botões (para futuramente adicionar ações)
     private final Button btnCaminhos;
     private final Button btnStart;
-    private final Button btnReanalyze;
-    private final Button btnReanalyzeErrors;
     private final Button btnSettings;
 
     /**
@@ -136,26 +134,6 @@ public class HeaderBar extends HBox {
         // Adiciona classe CSS "btn-success" (fundo verde)
         btnStart.getStyleClass().add("btn-success");
 
-        // --- Botão "Reanalisar tudo" ---
-        btnReanalyze = new Button("Reanalisar tudo");
-
-        FontIcon syncIcon = new FontIcon(FontAwesomeSolid.SYNC);
-        syncIcon.setIconSize(14);
-        syncIcon.setIconColor(Color.WHITE);
-
-        btnReanalyze.setGraphic(syncIcon);
-        btnReanalyze.getStyleClass().add("btn-outline");
-
-        // --- Botão "Reanalisar só erros" ---
-        btnReanalyzeErrors = new Button("Reanalisar só erros");
-
-        FontIcon redoIcon = new FontIcon(FontAwesomeSolid.REDO);
-        redoIcon.setIconSize(14);
-        redoIcon.setIconColor(Color.WHITE);
-
-        btnReanalyzeErrors.setGraphic(redoIcon);
-        btnReanalyzeErrors.getStyleClass().add("btn-outline");
-
         // --- Botão de Configurações (apenas ícone, sem texto) ---
         btnSettings = new Button();
 
@@ -174,7 +152,7 @@ public class HeaderBar extends HBox {
         // 8px de espaço entre botões
 
         rightGroup.setAlignment(Pos.CENTER_RIGHT);
-        rightGroup.getChildren().addAll(btnStart, btnReanalyze, btnReanalyzeErrors, btnSettings);
+        rightGroup.getChildren().addAll(btnStart, btnSettings);
 
         // === MONTAR O HEADER COMPLETO ===
 
@@ -206,20 +184,6 @@ public class HeaderBar extends HBox {
      */
     public Button getStartButton() {
         return btnStart;
-    }
-
-    /**
-     * Retorna o botão de reanalisar tudo.
-     */
-    public Button getReanalyzeButton() {
-        return btnReanalyze;
-    }
-
-    /**
-     * Retorna o botão de reanalisar só erros.
-     */
-    public Button getReanalyzeErrorsButton() {
-        return btnReanalyzeErrors;
     }
 
     /**

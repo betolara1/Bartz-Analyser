@@ -30,7 +30,7 @@ import javafx.scene.layout.BorderPane;
 
 // VBox: layout vertical (filhos empilhados)
 import javafx.scene.layout.VBox;
-
+import javafx.scene.paint.Color;
 // HBox: layout horizontal
 import javafx.scene.layout.HBox;
 
@@ -44,8 +44,15 @@ import javafx.scene.control.ScrollPane;
 // Insets: padding nos 4 lados
 import javafx.geometry.Insets;
 
+import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 // FontAwesomeSolid: pack de ícones FontAwesome 5
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
+
+import com.bartz.analyzer.service.ConfigService;
 
 /**
  * MainLayout — Monta a tela inteira do dashboard.
@@ -79,6 +86,7 @@ public class MainLayout extends BorderPane {
     private final ScrollPane dashboardContent;
     private final SettingsLayout settingsContent;
     private boolean showingSettings = false;
+    private boolean isMonitoring = false;
 
     private final KpiCard kpiRecebidos;
     private final KpiCard kpiCorretos;
@@ -201,7 +209,7 @@ public class MainLayout extends BorderPane {
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED); // vertical quando necessário
 
         // setCenter() coloca o ScrollPane na região CENTER do BorderPane.
-        // CENTER ocupa TODO o espaço restante (depois de TOP, BOTTOM, LEFT, RIGHT).
+        // CENTER ocupa todo o espaço restante (depois de TOP, BOTTOM, LEFT, RIGHT).
         this.setCenter(scrollPane);
         this.dashboardContent = scrollPane;
         this.settingsContent = new SettingsLayout();
@@ -220,8 +228,75 @@ public class MainLayout extends BorderPane {
             showingSettings = !showingSettings;
         });
 
-        // Define o fundo do layout principal
-        this.setStyle("-fx-background-color: #111111;");
+        headerBar.getStartButton().setOnAction(e ->{
+            // O botão start vai receber o botão pausar
+            if(!isMonitoring){
+                isMonitoring = true;
+
+                headerBar.getStartButton().setText("Parar");
+
+                // 2. Muda a Cor (Tira o verde 'btn-success', coloca o vermelho 'btn-danger')
+                headerBar.getStartButton().getStyleClass().remove("btn-success");
+                headerBar.getStartButton().getStyleClass().add("btn-danger");
+                
+                // 3. Muda o Ícone (de Play para Stop)
+                FontIcon stopIcon = new FontIcon(FontAwesomeSolid.STOP);
+                stopIcon.setIconColor(Color.WHITE);
+                headerBar.getStartButton().setGraphic(stopIcon);
+
+                // Procura o caminho configurado
+                String inputPath = ConfigService.getValue(ConfigService.PATH_INPUT);
+
+                if(inputPath == null || inputPath.isEmpty()){
+                    System.out.print("Caminho não encontrado");
+                    return;
+                }
+
+                File dir = new File(inputPath);
+
+                // Verifica se a pasta existe
+                if(dir.exists() && dir.isDirectory()){
+                    // Busca os arquivos .xml
+                    File[] files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".xml"));
+
+                    if(files != null){
+                        // Limpa a tabela pra adicionar novos arquivos
+                        fileTable.getData().clear();
+
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM HH:mm");
+
+                        for(File file : files){
+                            fileTable.getData().add(new FileTable.FileRow(
+                                                    file.getName(),
+                                                    "OK",
+                                                    "",
+                                                    "",
+                                                    LocalDateTime.now().format(formatter)
+                            ));
+                        }
+                    }
+                }
+                else{
+                    System.out.print("Pasta não encontrada: " + inputPath);
+                }
+            }
+            else{
+                // --- AÇÃO: VAI PARAR ---
+                isMonitoring = false;
+                
+                // Volta tudo ao original
+                headerBar.getStartButton().setText("Iniciar");
+                headerBar.getStartButton().getStyleClass().remove("btn-danger");
+                headerBar.getStartButton().getStyleClass().add("btn-success");
+                
+                FontIcon playIcon = new FontIcon(FontAwesomeSolid.PLAY);
+                playIcon.setIconColor(Color.WHITE);
+                headerBar.getStartButton().setGraphic(playIcon);
+            }
+
+            // Define o fundo do layout principal
+            this.setStyle("-fx-background-color: #111111;");
+        });
     }
 
     // === MÉTODOS PÚBLICOS ===
