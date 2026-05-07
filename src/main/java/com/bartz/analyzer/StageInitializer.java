@@ -48,6 +48,8 @@ import org.springframework.stereotype.Component;
 // Ele aplica um visual moderno e profissional a todos os componentes.
 import atlantafx.base.theme.PrimerDark;
 
+import com.bartz.analyzer.service.AnalyserService;
+import com.bartz.analyzer.service.ArquivoService;
 // MainLayout: nosso componente customizado que monta toda a tela
 import com.bartz.analyzer.ui.MainLayout;
 
@@ -65,6 +67,13 @@ import com.bartz.analyzer.ui.MainLayout;
  */
 @Component
 public class StageInitializer implements ApplicationListener<JavafxApplication.StageReadyEvent> {
+
+    private final AnalyserService analyserService;
+    private final ArquivoService arquivoService;
+    private StageInitializer (AnalyserService analyserService){
+        this.analyserService = analyserService;
+        this.arquivoService = new ArquivoService();
+    }
 
     /**
      * Método chamado quando o evento StageReadyEvent é disparado.
@@ -89,7 +98,7 @@ public class StageInitializer implements ApplicationListener<JavafxApplication.S
         // MainLayout é um BorderPane que contém:
         // - HeaderBar (topo)
         // - KPI Cards + FilterBar + FileTable (centro)
-        MainLayout mainLayout = new MainLayout();
+        MainLayout mainLayout = new MainLayout(analyserService);
 
         // 4. Criar a Scene (o conteúdo da janela).
         // Scene recebe:

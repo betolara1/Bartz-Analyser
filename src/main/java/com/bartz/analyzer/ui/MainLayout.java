@@ -36,11 +36,11 @@ import javafx.scene.layout.HBox;
 
 // Priority: controle de crescimento
 import javafx.scene.layout.Priority;
-
 // ScrollPane: container com scroll (barra de rolagem)
 // Usado quando o conteúdo pode ser maior que a janela
 import javafx.scene.control.ScrollPane;
-
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 // Insets: padding nos 4 lados
 import javafx.geometry.Insets;
 
@@ -52,6 +52,8 @@ import java.time.format.DateTimeFormatter;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import com.bartz.analyzer.service.AnalyserService;
+import com.bartz.analyzer.service.ArquivoService;
 import com.bartz.analyzer.service.ConfigService;
 
 /**
@@ -95,10 +97,16 @@ public class MainLayout extends BorderPane {
     private final FilterBar filterBar;
     private final FileTable fileTable;
 
+    private final AnalyserService analyserService;
+    private final ArquivoService arquivoService;
+    private final FilteredList<FileTable.FileRow> filteredList;
+
     /**
      * Construtor — monta o layout inteiro.
      */
-    public MainLayout() {
+    public MainLayout(AnalyserService analyserService) {
+        this.analyserService = analyserService;
+        this.arquivoService = new ArquivoService();
 
         // === 1. HEADER (topo da tela) ===
 
@@ -160,10 +168,22 @@ public class MainLayout extends BorderPane {
         // === 3. FILTROS (barra de busca e filtros) ===
 
         filterBar = new FilterBar();
+        
+        // Escuta o campo de busca (cada letra digitada)
+        filterBar.getSearchField().textProperty().addListener((obs, oldVal, newVal) -> applyFilters());
+        // Escuta o ComboBox (cada mudança de seleção)
+        filterBar.getStatusFilter().valueProperty().addListener((obs, oldVal, newVal) -> applyFilters());
 
         // === 4. TABELA (lista de arquivos) ===
 
         fileTable = new FileTable();
+
+        // VARIAVEIS PARA O FILTRO
+        this.filteredList = new FilteredList<>(fileTable.getData(), p -> true);
+        SortedList<FileTable.FileRow> sortedData = new SortedList<>(filteredList);
+        sortedData.comparatorProperty().bind(fileTable.getTable().comparatorProperty());
+        // AQUI Conecta a tabela à lista inteligente (filtrada e organizada)
+        fileTable.getTable().setItems(sortedData);
 
         // Faz a tabela crescer verticalmente para ocupar todo o espaço restante
         VBox.setVgrow(fileTable, Priority.ALWAYS);
@@ -228,9 +248,10 @@ public class MainLayout extends BorderPane {
             showingSettings = !showingSettings;
         });
 
-        headerBar.getStartButton().setOnAction(e ->{
+        // LOGICA DO BOTÃO START INICIAL
+        headerBar.getStartButton().setOnAction(e -> {
             // O botão start vai receber o botão pausar
-            if(!isMonitoring){
+            if (!isMonitoring) {
                 isMonitoring = true;
 
                 headerBar.getStartButton().setText("Parar");
@@ -238,7 +259,7 @@ public class MainLayout extends BorderPane {
                 // 2. Muda a Cor (Tira o verde 'btn-success', coloca o vermelho 'btn-danger')
                 headerBar.getStartButton().getStyleClass().remove("btn-success");
                 headerBar.getStartButton().getStyleClass().add("btn-danger");
-                
+
                 // 3. Muda o Ícone (de Play para Stop)
                 FontIcon stopIcon = new FontIcon(FontAwesomeSolid.STOP);
                 stopIcon.setIconColor(Color.WHITE);
@@ -247,7 +268,7 @@ public class MainLayout extends BorderPane {
                 // Procura o caminho configurado
                 String inputPath = ConfigService.getValue(ConfigService.PATH_INPUT);
 
-                if(inputPath == null || inputPath.isEmpty()){
+                if (inputPath == null || inputPath.isEmpty()) {
                     System.out.print("Caminho não encontrado");
                     return;
                 }
@@ -255,40 +276,43 @@ public class MainLayout extends BorderPane {
                 File dir = new File(inputPath);
 
                 // Verifica se a pasta existe
-                if(dir.exists() && dir.isDirectory()){
+                if (dir.exists() && dir.isDirectory()) {
                     // Busca os arquivos .xml
                     File[] files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".xml"));
 
-                    if(files != null){
+                    if (files != null) {
                         // Limpa a tabela pra adicionar novos arquivos
                         fileTable.getData().clear();
 
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
-                        for(File file : files){
+                        for (File file : files) {
+                            String status = analyserService.processarStatus(file);
+                            String erro = analyserService.processarErro(file);
+                            System.out.print(status);
+                            System.out.print(erro);
+
                             fileTable.getData().add(new FileTable.FileRow(
-                                                    file.getName(),
-                                                    "OK",
-                                                    "",
-                                                    "",
-                                                    LocalDateTime.now().format(formatter)
-                            ));
+                                    file.getName(),
+                                    status,
+                                    erro,
+                                    "",
+                                    LocalDateTime.now().format(formatter)));
+                            arquivoService.monitorarArquivos(inputPath);
                         }
                     }
-                }
-                else{
+                } else {
                     System.out.print("Pasta não encontrada: " + inputPath);
                 }
-            }
-            else{
+            } else {
                 // --- AÇÃO: VAI PARAR ---
                 isMonitoring = false;
-                
+
                 // Volta tudo ao original
                 headerBar.getStartButton().setText("Iniciar");
                 headerBar.getStartButton().getStyleClass().remove("btn-danger");
                 headerBar.getStartButton().getStyleClass().add("btn-success");
-                
+
                 FontIcon playIcon = new FontIcon(FontAwesomeSolid.PLAY);
                 playIcon.setIconColor(Color.WHITE);
                 headerBar.getStartButton().setGraphic(playIcon);
@@ -335,5 +359,23 @@ public class MainLayout extends BorderPane {
     /** Retorna o FileTable para acessar a tabela */
     public FileTable getFileTable() {
         return fileTable;
+    }
+
+    private void applyFilters(){
+        String searchText = filterBar.getSearchField().getText().toLowerCase();
+        String statusFilter = filterBar.getStatusFilter().getValue();
+
+        filteredList.setPredicate(row -> {
+            // filtro do texto
+            boolean matchesSearch = searchText == null || searchText.isEmpty() || 
+                                    row.getFilename().toLowerCase().contains(searchText);
+
+             // Filtro de Status
+            boolean matchesStatus = statusFilter == null || statusFilter.equals("Todos") ||
+                                    row.getStatus().equals(statusFilter);
+
+            // Retorna TRUE se passar nas duas regras
+            return matchesSearch && matchesStatus;
+        });
     }
 }

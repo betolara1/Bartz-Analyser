@@ -54,7 +54,7 @@ import javafx.scene.paint.Color;
  *
  * Estrutura visual:
  * ┌──────────────────────────────────────────────────────────┐
- * │ [B] Bartz Verificador XML        [▶ Iniciar] [⟳] [⚙]  │
+ * │ [B] Bartz Verificador XML        [▶ Iniciar] [⟳] [⚙]   │
  * └──────────────────────────────────────────────────────────┘
  *
  * Internamente é um HBox com:

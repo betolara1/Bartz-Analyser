@@ -204,10 +204,7 @@ public class FileTable extends VBox {
                 super.updateItem(errors, empty);
 
                 if (empty || errors == null || errors.isBlank()) {
-                    // Mostra "—" quando não tem erros
-                    Label dash = new Label("—");
-                    dash.setStyle("-fx-text-fill: #444444;");
-                    setGraphic(dash);
+                    setGraphic(null);
                     setText(null);
                 } else {
                     // FlowPane: layout que organiza filhos em "fluxo".
@@ -246,9 +243,7 @@ public class FileTable extends VBox {
                 super.updateItem(autoFix, empty);
 
                 if (empty || autoFix == null || autoFix.isBlank()) {
-                    Label dash = new Label("—");
-                    dash.setStyle("-fx-text-fill: #444444;");
-                    setGraphic(dash);
+                    setGraphic(null);
                     setText(null);
                 } else {
                     FlowPane flow = new FlowPane();
@@ -411,11 +406,11 @@ public class FileTable extends VBox {
          * @param autoFix   Auto-fixes separados por ";" (ou "" se nenhum)
          * @param timestamp Data/hora do processamento
          */
-        public FileRow(String filename, String status, String errors,
+        public FileRow(String filename, Object status, String errors,
                 String autoFix, String timestamp) {
             // new SimpleStringProperty(valor) cria a property com valor inicial
             this.filename = new SimpleStringProperty(filename);
-            this.status = new SimpleStringProperty(status);
+            this.status = new SimpleStringProperty(String.valueOf(status));
             this.errors = new SimpleStringProperty(errors);
             this.autoFix = new SimpleStringProperty(autoFix);
             this.timestamp = new SimpleStringProperty(timestamp);
