@@ -289,8 +289,8 @@ public class MainLayout extends BorderPane {
                         for (File file : files) {
                             String status = analyserService.processarStatus(file);
                             String erro = analyserService.processarErro(file);
-                            System.out.print(status);
-                            System.out.print(erro);
+                            System.out.println(status);
+                            System.out.println(erro);
 
                             fileTable.getData().add(new FileTable.FileRow(
                                     file.getName(),
@@ -302,7 +302,7 @@ public class MainLayout extends BorderPane {
                         }
                     }
                 } else {
-                    System.out.print("Pasta não encontrada: " + inputPath);
+                    System.out.println("Pasta não encontrada: " + inputPath);
                 }
             } else {
                 // --- AÇÃO: VAI PARAR ---
@@ -372,7 +372,7 @@ public class MainLayout extends BorderPane {
 
              // Filtro de Status
             boolean matchesStatus = statusFilter == null || statusFilter.equals("Todos") ||
-                                    row.getStatus().equals(statusFilter);
+                                    row.getStatus().equalsIgnoreCase(statusFilter);
 
             // Retorna TRUE se passar nas duas regras
             return matchesSearch && matchesStatus;

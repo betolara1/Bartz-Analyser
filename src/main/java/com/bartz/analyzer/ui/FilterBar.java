@@ -78,9 +78,9 @@ public class FilterBar extends HBox {
         // addAll() adiciona várias opções de uma vez.
         statusFilter.getItems().addAll(
             "Todos",           // Mostra todos os arquivos
-            "OK",              // Somente arquivos corretos
+            "Ok",              // Somente arquivos corretos
             "Erro",            // Somente com erros
-            "Ferragens-only"   // Somente com ferragens
+            "Ferragens"   // Somente com ferragens
         );
 
         // setValue() define o valor inicial selecionado

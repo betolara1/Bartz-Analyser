@@ -9,11 +9,13 @@ public class AnalyserService {
 
     private final CoringaService coringa;
     private final ArquivoService arquivo;
+    private final AutofixService autofix;
     private String error;
 
-    public AnalyserService(CoringaService coringa, ArquivoService arquivo){
+    public AnalyserService(CoringaService coringa, ArquivoService arquivo, AutofixService autofix){
         this.coringa = coringa;
         this.arquivo = arquivo;
+        this.autofix = autofix;
     }
 
     public void processarTudo(File file){
@@ -23,42 +25,31 @@ public class AnalyserService {
 
     public String processarStatus(File file){
         try{
-            // buscar documento
             Document doc = arquivo.carregarArquivo(file);
+            boolean temCoringa = coringa.temCoringa(doc);
+            boolean temAutofix = autofix.temAutofix(doc, file);
 
-            // analisar documento
-            if(coringa.temCoringa(doc)){
-                System.out.print(doc + "possui coringas!");
-                return "ERRO";
-            }
-            else{
-                return "OK";
-            }
+            if(temCoringa){return "ERRO";}
+            if(temAutofix){return "OK";}
+            return "OK";
         }
         catch(Exception e){
-            e.printStackTrace();
             return "FALHA";
         }
     }
 
     public String processarErro(File file){
         try{
-            // buscar documento
             Document doc = arquivo.carregarArquivo(file);
+            boolean temCoringa = coringa.temCoringa(doc);
+            boolean temAutofix = autofix.temAutofix(doc, file);
 
-            // analisar documento
-            if(coringa.temCoringa(doc)){
-                System.out.print(doc + "possui coringas!");
-                return "CORINGA";
-            }
-            else{
-                return "";
-            }
+            if(temCoringa){return "CORINGA";}
+            if(temAutofix){return "AUTOFIX";}
+            return "";
         }
         catch(Exception e){
-            e.printStackTrace();
             return "FALHA";
         }
     }
-
 }
