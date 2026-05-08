@@ -220,8 +220,13 @@ public class FileTable extends VBox {
                         String trimmed = error.trim();
                         if (!trimmed.isEmpty()) {
                             Label badge = new Label(trimmed);
-                            badge.getStyleClass().addAll("badge", "badge-error-tag");
-                            flow.getChildren().add(badge);
+                            if ("FERRAGENS".equals(trimmed)) {
+                                badge.getStyleClass().addAll("badge", "badge-ferragens");
+                            } else {
+                                badge.getStyleClass().addAll("badge", "badge-error-tag");
+                            }
+                            // A LINHA ABAIXO ESTAVA FALTANDO:
+                            flow.getChildren().add(badge); 
                         }
                     }
 

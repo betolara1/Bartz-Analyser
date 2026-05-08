@@ -107,7 +107,7 @@ public class HeaderBar extends HBox {
         // HBox para agrupar logo + título + botão
         HBox leftGroup = new HBox(16);
         leftGroup.setAlignment(Pos.CENTER_LEFT);
-        leftGroup.getChildren().addAll(logoBox, appTitle, btnCaminhos);
+        leftGroup.getChildren().addAll(logoBox, appTitle);
 
         // === ESPAÇADOR CENTRAL ===
         // Region invisível que "empurra" os botões para a direita.
@@ -152,7 +152,7 @@ public class HeaderBar extends HBox {
         // 8px de espaço entre botões
 
         rightGroup.setAlignment(Pos.CENTER_RIGHT);
-        rightGroup.getChildren().addAll(btnStart, btnSettings);
+        rightGroup.getChildren().addAll(btnStart, btnCaminhos);
 
         // === MONTAR O HEADER COMPLETO ===
 
