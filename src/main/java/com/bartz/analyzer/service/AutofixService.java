@@ -2,10 +2,6 @@ package com.bartz.analyzer.service;
 
 import java.io.File;
 
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -14,35 +10,65 @@ import org.w3c.dom.NodeList;
 public class AutofixService {
     private ArquivoService arquivoService;
 
-    private AutofixService(ArquivoService arquivoService){
+    public AutofixService(ArquivoService arquivoService){
         this.arquivoService = arquivoService;
     }
 
-    public boolean temAutofix(Document doc, File file) {
+    public String temAutofix(Document doc, File file) {
         try {
-            XPath xPath = XPathFactory.newInstance().newXPath();
+            int qtyFixCount = 0;
+            int priceFixCount = 0;
+            boolean changed = false;
 
-            // Esta busca procura por:
-            // 1. Qualquer atributo chamado PRECO_TOTAL que tenha o valor EXATO "0.00"
-            // 2. Qualquer tag chamada PRECO_TOTAL que tenha o conteúdo EXATO "0.00"
-            String busca = "//*[@PRECO_TOTAL='0.00'] | //PRECO_TOTAL[text()='0.00']";
+            // Busca todas as tags <ITEM> 
+            NodeList items = doc.getElementsByTagName("ITEM");
 
-            NodeList lista = (NodeList) xPath.compile(busca).evaluate(doc, XPathConstants.NODESET);
+            for (int i = 0; i < items.getLength(); i++) {
+                org.w3c.dom.Element item = (org.w3c.dom.Element) items.item(i);
 
-            // Se a lista tiver mais de 0 itens, significa que ele encontrou
-            if (lista.getLength() > 0) {
-                for (int i = 0; i < lista.getLength(); i++){
-                    lista.item(i).setTextContent("0.10");
+                // --- LÓGICA DE QUANTIDADE ---
+                String qty = item.getAttribute("QUANTIDADE");
+
+                // Se tem referência e a quantidade é zero (0, 0.0, 0.00...)
+                if (isZero(qty)) {
+                    item.setAttribute("QUANTIDADE", "1");
+                    qtyFixCount++;
+                    changed = true;
                 }
 
-                arquivoService.salvarArquivo(doc, file);
-
-                return true;
+                // --- LÓGICA DE PRECO_TOTAL ---
+                String price = item.getAttribute("PRECO_TOTAL");
+                if (isZero(price)) {
+                    item.setAttribute("PRECO_TOTAL", "0.10");
+                    priceFixCount++;
+                    changed = true;
+                }
             }
-        } catch (Exception e) {
+
+            if (changed) {
+                arquivoService.salvarArquivo(doc, file);
+                java.util.List<String> msgs = new java.util.ArrayList<>();
+                if (qtyFixCount > 0) msgs.add("QUANTIDADE");
+                if (priceFixCount > 0) msgs.add("PREÇO");
+                
+                return String.join(" | ", msgs);
+            }
+        } 
+        catch (Exception e) {
             e.printStackTrace();
         }
-        
-        return false;
+        return null;
+    }
+
+    // Método auxiliar para verificar se o valor é zero (0, 0.0, 0.00, etc)
+    private boolean isZero(String val) {
+        if (val == null || val.trim().isEmpty()) return false;
+
+        try {
+            return Double.parseDouble(val.trim()) == 0;
+        } 
+        catch (NumberFormatException e) {
+            return false;
+        }
     }
 }

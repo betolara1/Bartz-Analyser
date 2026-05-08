@@ -18,38 +18,33 @@ public class AnalyserService {
         this.autofix = autofix;
     }
 
-    public void processarTudo(File file){
-        processarErro(file);
-        processarStatus(file);
+    public class AnaliseTags{
+        public String status = "OK";
+        public String error = "";
+        public String autofix = "";
     }
 
-    public String processarStatus(File file){
+    public AnaliseTags processarTags(File file){
+        AnaliseTags analise = new AnaliseTags();
+
         try{
             Document doc = arquivo.carregarArquivo(file);
-            boolean temCoringa = coringa.temCoringa(doc);
-            boolean temAutofix = autofix.temAutofix(doc, file);
 
-            if(temCoringa){return "ERRO";}
-            if(temAutofix){return "OK";}
-            return "OK";
+            // VERIFICA CORINGA
+            if(coringa.temCoringa(doc)){
+                analise.status = "ERRO";
+                analise.error = "CORINGA";
+            }
+
+            // Verifica e Corrige Autofix 
+            String resultadoAutofix = autofix.temAutofix(doc, file);
+            if (resultadoAutofix != null) {
+                analise.autofix = resultadoAutofix; // Aqui agora vai aparecer "QUANTIDADE (1) | PREÇO (2)"
+            }
         }
         catch(Exception e){
-            return "FALHA";
+            analise.status = "FALHA";
         }
-    }
-
-    public String processarErro(File file){
-        try{
-            Document doc = arquivo.carregarArquivo(file);
-            boolean temCoringa = coringa.temCoringa(doc);
-            boolean temAutofix = autofix.temAutofix(doc, file);
-
-            if(temCoringa){return "CORINGA";}
-            if(temAutofix){return "AUTOFIX";}
-            return "";
-        }
-        catch(Exception e){
-            return "FALHA";
-        }
+        return analise;
     }
 }

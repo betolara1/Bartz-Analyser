@@ -55,6 +55,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import com.bartz.analyzer.service.AnalyserService;
 import com.bartz.analyzer.service.ArquivoService;
 import com.bartz.analyzer.service.ConfigService;
+import com.bartz.analyzer.service.AnalyserService.AnaliseTags;
 
 /**
  * MainLayout — Monta a tela inteira do dashboard.
@@ -287,16 +288,13 @@ public class MainLayout extends BorderPane {
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
                         for (File file : files) {
-                            String status = analyserService.processarStatus(file);
-                            String erro = analyserService.processarErro(file);
-                            System.out.println(status);
-                            System.out.println(erro);
+                            AnaliseTags analise = analyserService.processarTags(file);
 
                             fileTable.getData().add(new FileTable.FileRow(
                                     file.getName(),
-                                    status,
-                                    erro,
-                                    "",
+                                    analise.status,
+                                    analise.error,
+                                    analise.autofix,
                                     LocalDateTime.now().format(formatter)));
                             arquivoService.monitorarArquivos(inputPath);
                         }

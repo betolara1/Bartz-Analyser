@@ -67,7 +67,7 @@ public class ArquivoService {
                             Platform.runLater(() -> {
                                 // Aqui você chama a sua lógica de análise!
                                 System.out.println("Novo arquivo detectado: " + nomeArquivo);
-                                analyserService.processarTudo(arquivoNovo);
+                                analyserService.processarTags(arquivoNovo);
                             });
                         }
                     }
