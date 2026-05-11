@@ -80,7 +80,8 @@ public class FilterBar extends HBox {
             "Todos",           // Mostra todos os arquivos
             "Ok",              // Somente arquivos corretos
             "Erro",            // Somente com erros
-            "Ferragens"   // Somente com ferragens
+            "Ferragens",   // Somente com ferragens
+            "Muxarabi"
         );
 
         // setValue() define o valor inicial selecionado

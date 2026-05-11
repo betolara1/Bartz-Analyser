@@ -35,19 +35,19 @@ public class AnalyserService {
         try{
             Document doc = arquivo.carregarArquivo(file);
 
-            // VERIFICA CORINGA
+            // ------------------- VERIFICA CORINGA -------------------
             if(coringa.temCoringa(doc)){
                 analise.status = "ERRO";
                 analise.error = "CORINGA";
             }
 
-            // Verifica e Corrige Autofix 
+            // ------------------- Verifica e Corrige Autofix -------------------
             String resultadoAutofix = autofix.temAutofix(doc, file);
             if (resultadoAutofix != null) {
                 analise.autofix = resultadoAutofix; // Aqui agora vai aparecer "QUANTIDADE (1) | PREÇO (2)"
             }
 
-            // VERIFICA SEM ITEM FILHO
+            // ------------------- VERIFICA SEM ITEM FILHO -------------------
             NodeList todosItens = doc.getElementsByTagName("ITEM");
             for (int i = 0; i < todosItens.getLength(); i++) {
                 Element item = (Element) todosItens.item(i);
@@ -86,17 +86,24 @@ public class AnalyserService {
                 }
             }
 
-            // VERIFICA MÁQUINAS (FERRAGENS)
+            // ------------------- VERIFICA MÁQUINAS (FERRAGENS) -------------------
             NodeList maquinas = doc.getElementsByTagName("MAQUINA");
-            Set<String> idsEncontrados = new HashSet<>();
+
+            //Cria uma lista única (Set) para guardar os IDs que existem no xml
+            Set<String> idsFerragem = new HashSet<>();
+
             for (int i = 0; i < maquinas.getLength(); i++) {
                 Element m = (Element) maquinas.item(i);
-                idsEncontrados.add(m.getAttribute("ID_PLUGIN"));
+
+                // Percorre as tags encontradas e extrai o valor do atributo ID_PLUGIN.
+                idsFerragem.add(m.getAttribute("ID_PLUGIN"));
             }
+
             // Lista de máquinas obrigatórias conforme o seu JS
             String[] obrigatorios = {"2530", "2534", "2341", "2525"};
+
             for (String id : obrigatorios) {
-                if (!idsEncontrados.contains(id)) {
+                if (!idsFerragem.contains(id)) {
                     // Se faltar alguma máquina obrigatória, adicionamos o erro "FERRAGENS"
                     // O status permanece "OK" conforme solicitado
                     if (analise.error.isEmpty()) {
@@ -107,6 +114,23 @@ public class AnalyserService {
                     break;
                 }
             }
+
+
+            // ------------------- VERIFICA OS MUXARABIS -------------------
+            NodeList muxarabi = doc.getElementsByTagName("ITEM");
+
+            for(int i = 0; i < muxarabi.getLength();){
+                Element muxaElement = (Element) muxarabi.item(i);
+                String idsMuxarabi = muxaElement.getAttribute("REFERENCIA");
+
+                if(idsMuxarabi.startsWith("MX6")) {
+                    analise.error = "MUXARABI";
+                    analise.status = "ERRO";
+                }
+                break;
+            }
+
+
         }
         catch(Exception e){
             analise.status = "FALHA";

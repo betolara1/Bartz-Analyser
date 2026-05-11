@@ -180,6 +180,10 @@ public class FileTable extends VBox {
                             badge.setText("FERRAGENS-ONLY");
                             badge.getStyleClass().add("badge-ferragens");
                             break;
+                        case "MUXARABI":
+                            badge.setText("MUXARABI");
+                            badge.getStyleClass().add("badge-ferragens");
+                            break;
                     }
 
                     // setGraphic() coloca um Node (componente visual) na célula
@@ -221,6 +225,12 @@ public class FileTable extends VBox {
                         if (!trimmed.isEmpty()) {
                             Label badge = new Label(trimmed);
                             if ("FERRAGENS".equals(trimmed)) {
+                                badge.getStyleClass().addAll("badge", "badge-ferragens");
+                            } else {
+                                badge.getStyleClass().addAll("badge", "badge-error-tag");
+                            }
+
+                            if ("MUXARABI".equals(trimmed)) {
                                 badge.getStyleClass().addAll("badge", "badge-ferragens");
                             } else {
                                 badge.getStyleClass().addAll("badge", "badge-error-tag");
