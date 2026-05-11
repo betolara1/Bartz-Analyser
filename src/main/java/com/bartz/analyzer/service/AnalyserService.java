@@ -15,12 +15,14 @@ public class AnalyserService {
     private final CoringaService coringa;
     private final ArquivoService arquivo;
     private final AutofixService autofix;
+    private final ItemVazioService itemVazio;
     private String error;
 
-    public AnalyserService(CoringaService coringa, ArquivoService arquivo, AutofixService autofix){
+    public AnalyserService(CoringaService coringa, ArquivoService arquivo, AutofixService autofix, ItemVazioService itemVazio){
         this.coringa = coringa;
         this.arquivo = arquivo;
         this.autofix = autofix;
+        this.itemVazio = itemVazio;
     }
 
     public class AnaliseTags{
@@ -48,44 +50,43 @@ public class AnalyserService {
             }
 
             // ------------------- VERIFICA SEM ITEM FILHO -------------------
-            NodeList todosItens = doc.getElementsByTagName("ITEM");
+            // NodeList todosItens = doc.getElementsByTagName("ITEM");
 
-            for (int i = 0; i < todosItens.getLength(); i++) {
-                Element item = (Element) todosItens.item(i);
-                String preco = item.getAttribute("PRECO_TOTAL");
+            // for (int i = 0; i < todosItens.getLength(); i++) {
+            //     Element item = (Element) todosItens.item(i);
+            //     String preco = item.getAttribute("PRECO_TOTAL");
 
-                // Verifica se o preço é exatamente 0.01
-                if ("0.01".equals(preco) || "0,01".equals(preco)) {
+            //     // Verifica se o preço é exatamente 0.01
+            //     if ("0.01".equals(preco) || "0,01".equals(preco)) {
                     
-                    // Procura pela tag <ITEMS> que deve conter os filhos
-                    NodeList itemsTags = item.getElementsByTagName("ITEMS");
-                    boolean temFilho = false;
+            //         // Procura pela tag <ITEMS> que deve conter os filhos
+            //         NodeList itemsTags = item.getElementsByTagName("ITEMS");
+            //         boolean temFilho = false;
 
-                    if (itemsTags.getLength() > 0) {
-                        Element itemsContainer = (Element) itemsTags.item(0);
+            //         if (itemsTags.getLength() > 0) {
+            //             Element itemsContainer = (Element) itemsTags.item(0);
 
-                        // Verifica se existe algum <ITEM> dentro de <ITEMS>
-                        // Note: Usamos uma busca que olha apenas descendentes diretos se necessário, 
-                        // mas getElementsByTagName("ITEM") dentro do container já resolve.
-                        NodeList filhos = itemsContainer.getElementsByTagName("ITEM");
+            //             // Verifica se existe algum <ITEM> dentro de <ITEMS>
+            //             // Note: Usamos uma busca que olha apenas descendentes diretos se necessário, 
+            //             // mas getElementsByTagName("ITEM") dentro do container já resolve.
+            //             NodeList filhos = itemsContainer.getElementsByTagName("ITEM");
 
-                        if (filhos.getLength() > 0) {
-                            temFilho = true;
-                        }
-                    }
+            //             if (filhos.getLength() > 0) {
+            //                 temFilho = true;
+            //             }
+            //         }
 
-                    if (!temFilho) {
-                        analise.status = "ERRO";
-                        if (analise.error.isEmpty()) {
-                            analise.error = "SEM ITEM FILHO";
-                        } 
-                        else if (!analise.error.contains("SEM ITEM FILHO")) {
-                            analise.error += "; SEM ITEM FILHO";
-                        }
-                        break;
-                    }
+            if (itemVazio.temItemVazio(doc)) {
+                analise.status = "ERRO";
+                if (analise.error.isEmpty()) {
+                    analise.error = "SEM ITEM FILHO";
+                } 
+                else if (!analise.error.contains("SEM ITEM FILHO")) {
+                    analise.error += "; SEM ITEM FILHO";
                 }
             }
+            //     }
+            // }
 
             // ------------------- VERIFICA MÁQUINAS (FERRAGENS) -------------------
             NodeList maquinas = doc.getElementsByTagName("MAQUINA");
@@ -120,7 +121,7 @@ public class AnalyserService {
             // ------------------- VERIFICA OS MUXARABIS -------------------
             NodeList muxarabi = doc.getElementsByTagName("ITEM");
 
-            for(int i = 0; i < muxarabi.getLength();){
+            for(int i = 0; i < muxarabi.getLength(); i++){
                 Element muxarabiElement = (Element) muxarabi.item(i);
                 String refMuxarabi = muxarabiElement.getAttribute("REFERENCIA");
 
@@ -138,7 +139,7 @@ public class AnalyserService {
 
             String codImportKey = keyElement.getAttribute("CODIGO");
             //COLOCAR CODIGO DEPOIS
-            System.out.println(codImportKey);
+            //System.out.println(codImportKey);
 
 
             // ------------------- VERIFICA OS ITENS ESPECIAIS -------------------
@@ -158,13 +159,27 @@ public class AnalyserService {
                     String descricao = espElement.getAttribute("DESCRICAO");
 
                     //COLOCAR CODIGO DEPOIS
-                    System.out.println("Desenho: " +desenho + "\n"+ largura +"\n" + altura + "\n" + profundidade + "\n" + descricao);
+                    //System.out.println("Desenho: " +desenho + "\n"+ largura +"\n" + altura + "\n" + profundidade + "\n" + descricao);
                 }
             }
 
 
             // ------------------- VERIFICA OS ITENS DUPLADOS -------------------
-            
+            NodeList duplados = doc.getElementsByTagName("ITEM");
+
+            for (int i = 0; i < duplados.getLength(); i++){
+                Element duplElement = (Element) duplados.item(i);
+                String ibDuplado = duplElement.getAttribute("ITEM_BASE");
+                String refDuplado = duplElement.getAttribute("REFERENCIA");
+
+                if(ibDuplado.startsWith("ES08") || refDuplado.startsWith("ES08")){
+                    // analise.error = "37 MM DUPLADO";
+                    // analise.status = "ERRO";
+                    System.out.println(ibDuplado + "\n" + refDuplado);
+                }
+
+                break;
+            }
 
         }
         catch(Exception e){
