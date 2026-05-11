@@ -49,6 +49,7 @@ public class AnalyserService {
 
             // ------------------- VERIFICA SEM ITEM FILHO -------------------
             NodeList todosItens = doc.getElementsByTagName("ITEM");
+
             for (int i = 0; i < todosItens.getLength(); i++) {
                 Element item = (Element) todosItens.item(i);
                 String preco = item.getAttribute("PRECO_TOTAL");
@@ -120,16 +121,50 @@ public class AnalyserService {
             NodeList muxarabi = doc.getElementsByTagName("ITEM");
 
             for(int i = 0; i < muxarabi.getLength();){
-                Element muxaElement = (Element) muxarabi.item(i);
-                String idsMuxarabi = muxaElement.getAttribute("REFERENCIA");
+                Element muxarabiElement = (Element) muxarabi.item(i);
+                String refMuxarabi = muxarabiElement.getAttribute("REFERENCIA");
 
-                if(idsMuxarabi.startsWith("MX6")) {
+                if(refMuxarabi.startsWith("MX6")) {
                     analise.error = "MUXARABI";
                     analise.status = "ERRO";
                 }
                 break;
             }
 
+            // ------------------- VERIFICA O IMPORTKEY -------------------
+            NodeList importKey = doc.getElementsByTagName("IMPORTKEY");
+
+            Element keyElement = (Element) importKey.item(0);
+
+            String codImportKey = keyElement.getAttribute("CODIGO");
+            //COLOCAR CODIGO DEPOIS
+            System.out.println(codImportKey);
+
+
+            // ------------------- VERIFICA OS ITENS ESPECIAIS -------------------
+            NodeList especias = doc.getElementsByTagName("ITEM");
+
+            for(int i = 0; i < especias.getLength(); i++){
+                Element espElement = (Element) especias.item(i);
+                String refEspeciais = espElement.getAttribute("REFERENCIA");
+                String ibEspeciais = espElement.getAttribute("ITEM_BASE");
+                
+
+                if(refEspeciais.startsWith("ES0") || ibEspeciais.startsWith("ES0")){
+                    String desenho = espElement.getAttribute("DESENHO");
+                    String largura = espElement.getAttribute("LARGURA");
+                    String altura = espElement.getAttribute("ALTURA");
+                    String profundidade = espElement.getAttribute("PROFUNDIDADE");
+                    String descricao = espElement.getAttribute("DESCRICAO");
+
+                    //COLOCAR CODIGO DEPOIS
+                    System.out.println("Desenho: " +desenho + "\n"+ largura +"\n" + altura + "\n" + profundidade + "\n" + descricao);
+                }
+            }
+
+
+            // ------------------- VERIFICA OS ITENS DUPLADOS -------------------
+            
 
         }
         catch(Exception e){
