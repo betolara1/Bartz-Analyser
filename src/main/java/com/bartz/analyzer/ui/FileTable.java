@@ -78,6 +78,8 @@ import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 // Color: cor para ícones
 import javafx.scene.paint.Color;
 
+import java.util.function.Consumer;
+
 /**
  * FileTable — Tabela de arquivos processados.
  *
@@ -101,6 +103,8 @@ public class FileTable extends VBox {
     // Lista observável de dados — quando esta lista muda,
     // a tabela atualiza automaticamente
     private final ObservableList<FileRow> data;
+
+    private Consumer<FileRow> onViewDetails;
 
     /**
      * Construtor — monta a tabela completa.
@@ -305,6 +309,13 @@ public class FileTable extends VBox {
                 btnView.getStyleClass().add("btn-ghost");
                 btnView.setTooltip(new Tooltip("Ver detalhes"));
 
+                btnView.setOnAction(e -> {
+                    FileRow rowData = getTableView().getItems().get(getIndex());
+                    if (onViewDetails != null) {
+                        onViewDetails.accept(rowData); // Avisa quem estiver ouvindo!
+                    }
+                });
+
                 // Ícone "pasta" para abrir no explorador
                 FontIcon folderIcon = new FontIcon(FontAwesomeSolid.FOLDER_OPEN);
                 folderIcon.setIconSize(14);
@@ -312,6 +323,20 @@ public class FileTable extends VBox {
                 btnFolder.setGraphic(folderIcon);
                 btnFolder.getStyleClass().add("btn-ghost");
                 btnFolder.setTooltip(new Tooltip("Abrir na pasta"));
+
+                btnFolder.setOnAction(e -> {
+                    FileRow row = getTableView().getItems().get(getIndex());
+                    String path = row.getFullPath();
+
+                    if (path != null && !path.isEmpty()) {
+                        try {
+                            // Comando para abrir o explorer e selecionar o arquivo
+                            new ProcessBuilder("explorer.exe", "/select,", path).start();
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                });
 
                 // Agrupa botões lado a lado
                 actionBox.setAlignment(Pos.CENTER);
@@ -383,6 +408,11 @@ public class FileTable extends VBox {
         return data;
     }
 
+    // este método é para o MainLayout se "inscrever"
+    public void setOnViewDetails(Consumer<FileRow> handler) {
+        this.onViewDetails = handler;
+    }
+
     // ================================================================
     // CLASSE INTERNA: FileRow — Modelo de dados de uma linha da tabela
     // ================================================================
@@ -405,6 +435,9 @@ public class FileTable extends VBox {
         private final SimpleStringProperty errors;
         private final SimpleStringProperty autoFix;
         private final SimpleStringProperty timestamp;
+        private final SimpleStringProperty fullPath;
+        private final SimpleStringProperty erpKey;
+
 
         /**
          * Construtor — cria uma linha com dados.
@@ -414,15 +447,19 @@ public class FileTable extends VBox {
          * @param errors    Erros separados por ";" (ou "" se nenhum)
          * @param autoFix   Auto-fixes separados por ";" (ou "" se nenhum)
          * @param timestamp Data/hora do processamento
+         * @param fullPath  Caminho completo da pasta 
+         * @param erpKey    Chave de importação do ERP
          */
         public FileRow(String filename, Object status, String errors,
-                String autoFix, String timestamp) {
+                String autoFix, String timestamp, String fullPath, String erpKey) {
             // new SimpleStringProperty(valor) cria a property com valor inicial
             this.filename = new SimpleStringProperty(filename);
             this.status = new SimpleStringProperty(String.valueOf(status));
             this.errors = new SimpleStringProperty(errors);
             this.autoFix = new SimpleStringProperty(autoFix);
             this.timestamp = new SimpleStringProperty(timestamp);
+            this.fullPath = new SimpleStringProperty(fullPath);
+            this.erpKey = new SimpleStringProperty(erpKey);
         }
 
         // === GETTERS ===
@@ -452,6 +489,16 @@ public class FileTable extends VBox {
         /** Retorna a data/hora */
         public String getTimestamp() {
             return timestamp.get();
+        }
+
+        /** Retorna o caminho completo da pasta */
+        public String getFullPath(){
+            return fullPath.get();
+        }
+
+        /** Retorna a chave do ERP */
+        public String getErpKey() {
+            return erpKey.get();
         }
 
         // === PROPERTY ACCESSORS ===
@@ -484,6 +531,16 @@ public class FileTable extends VBox {
             return timestamp;
         }
 
+        /** Property do caminho — para binding reativo */
+        public SimpleStringProperty fullPathProperty(){
+            return fullPath;
+        }
+
+        /** Property da chave do ERP — para binding reativo */
+        public SimpleStringProperty erpKeyProperty() {
+            return erpKey;
+        }
+
         // === SETTERS ===
         // Para atualizar os valores. Quando .set() é chamado,
         // a tabela se redesenha automaticamente!
@@ -511,6 +568,16 @@ public class FileTable extends VBox {
         /** Atualiza a data/hora */
         public void setTimestamp(String value) {
             timestamp.set(value);
+        }
+
+        /** Atualiza o caminho da pasta */
+        public void setFullPath(String value){
+            fullPath.set(value);
+        }
+
+        /** Atualiza a chave do ERP */
+        public void setErpKey(String value) {
+            erpKey.set(value);
         }
     }
 }

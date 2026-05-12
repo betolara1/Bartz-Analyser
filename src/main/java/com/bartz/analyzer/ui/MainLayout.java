@@ -235,6 +235,17 @@ public class MainLayout extends BorderPane {
         this.dashboardContent = scrollPane;
         this.settingsContent = new SettingsLayout();
 
+        fileTable.setOnViewDetails(row -> {
+            // Quando clicarem no olho, cria a tela de detalhes
+            FileDetailsView details = new FileDetailsView(row, () -> {
+                // Ação de "Voltar": coloca o dashboard de volta no centro
+                this.setCenter(dashboardContent);
+            });
+            
+            // Troca o centro da tela para os Detalhes
+            this.setCenter(details);
+        });
+
         // --- LÓGICA DE TROCA DE TELAS ---
         headerBar.getCaminhosButton().setOnAction(e -> {
             if (showingSettings) {
@@ -295,9 +306,11 @@ public class MainLayout extends BorderPane {
                                     analise.status,
                                     analise.error,
                                     analise.autofix,
-                                    LocalDateTime.now().format(formatter)));
-                            arquivoService.monitorarArquivos(inputPath);
+                                    LocalDateTime.now().format(formatter),
+                                    file.getAbsolutePath(),
+                                    analise.erpKey));
                         }
+                        arquivoService.monitorarArquivos(inputPath);
                     }
                 } else {
                     System.out.println("Pasta não encontrada: " + inputPath);

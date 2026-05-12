@@ -39,6 +39,7 @@ public class AnalyserService {
         public String status = "OK";
         public String error = "";
         public String autofix = "";
+        public String erpKey;
     }
 
     public AnaliseTags processarTags(File file){
@@ -81,12 +82,16 @@ public class AnalyserService {
 
             // ------------------- VERIFICA OS MUXARABIS -------------------
             if(muxarabi.temMuxarabi(doc)) {
-                analise.error = "MUXARABI";
+                if (analise.error.isEmpty()) {
+                    analise.error = "MUXARABI";
+                } else if (!analise.error.contains("MUXARABI")) {
+                    analise.error += "; MUXARABI";
+                }
                 analise.status = "OK";
             }
 
             // ------------------- VERIFICA O IMPORTKEY -------------------
-            importKey.mostrarImportKey(doc);
+            analise.erpKey = importKey.getImportKey(doc);
 
 
             // ------------------- VERIFICA OS ITENS ESPECIAIS -------------------
@@ -95,14 +100,20 @@ public class AnalyserService {
 
             // ------------------- VERIFICA OS ITENS DUPLADOS -------------------
             if(duplados.temDuplados(doc)){
-                analise.error = "DUPLADOS";
-                analise.status = "ERRO";
+                if (analise.error.isEmpty()) {
+                    analise.error = "DUPLADOS";
+                } else if (!analise.error.contains("DUPLADOS")) {
+                    analise.error += "; DUPLADOS";
+                }
             }
 
             // ------------------- VERIFICA OS ITENS SEM CODIGOS -------------------
             if(itemSemCodigo.temItemSemCodigo(doc)){
-                analise.error = "SEM CODIGO";
-                analise.status = "ERRO";
+                if (analise.error.isEmpty()) {
+                    analise.error = "SEM CODIGO";
+                } else if (!analise.error.contains("SEM CODIGO")) {
+                    analise.error += "; SEM CODIGO";
+                }
             }
 
         }

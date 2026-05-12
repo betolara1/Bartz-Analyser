@@ -380,3 +380,44 @@
     -fx-shape: "";
     -fx-padding: 0;
 }
+
+
+
+/* Cards da Tela de Detalhes */
+/* TELA DE MOSTRAR DETALHES DO PROJETO */
+.details-card {
+    -fx-background-color: #1A1A1A;
+    -fx-border-color: #333333;
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-padding: 15;
+}
+
+.details-label {
+    -fx-text-fill: #A7A7A7;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    /* -fx-text-transform: uppercase; */
+}
+
+/* Blocos de Máquinas */
+.machine-box {
+    -fx-background-color: #111111;
+    -fx-border-color: #27AE60; /* Verde se OK */
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 10;
+    -fx-alignment: center;
+}
+
+.machine-id {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #FFFFFF;
+}
+
+.machine-name {
+    -fx-font-size: 10px;
+    -fx-text-fill: #27AE60;
+}

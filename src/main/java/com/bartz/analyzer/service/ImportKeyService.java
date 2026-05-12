@@ -13,12 +13,14 @@ public class ImportKeyService {
         this.arquivo = arquivo;
     }
 
-    public void mostrarImportKey(Document doc){
+    public String getImportKey(Document doc) {
         NodeList importKey = doc.getElementsByTagName("IMPORTKEY");
 
-        Element keyElement = (Element) importKey.item(0);
+        if (importKey.getLength() > 0) {
+            Element keyElement = (Element) importKey.item(0);
+            return keyElement.getAttribute("CODIGO");
+        }
 
-        String codImportKey = keyElement.getAttribute("CODIGO");
-        System.out.println(codImportKey);
+        return null;
     }
 }
