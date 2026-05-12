@@ -4,8 +4,6 @@ import java.io.File;
 
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 @Service
 public class AnalyserService {
@@ -18,10 +16,12 @@ public class AnalyserService {
     private final MuxarabiService muxarabi;
     private final ImportKeyService importKey;
     private final EspeciaisService especiais;
+    private final DupladosService duplados;
     private String error;
 
     public AnalyserService( CoringaService coringa, ArquivoService arquivo, AutofixService autofix, ItemVazioService itemVazio, 
-                            FerragensService ferragens, MuxarabiService muxarabi, ImportKeyService importKey, EspeciaisService especiais){
+                            FerragensService ferragens, MuxarabiService muxarabi, ImportKeyService importKey, EspeciaisService especiais,
+                            DupladosService duplados){
         this.coringa = coringa;
         this.arquivo = arquivo;
         this.autofix = autofix;
@@ -30,6 +30,7 @@ public class AnalyserService {
         this.muxarabi = muxarabi;
         this.importKey = importKey;
         this.especiais = especiais;
+        this.duplados = duplados;
     }
 
     public class AnaliseTags{
@@ -76,7 +77,6 @@ public class AnalyserService {
                 }
             }
 
-
             // ------------------- VERIFICA OS MUXARABIS -------------------
             if(muxarabi.temMuxarabi(doc)) {
                 analise.error = "MUXARABI";
@@ -92,20 +92,9 @@ public class AnalyserService {
 
 
             // ------------------- VERIFICA OS ITENS DUPLADOS -------------------
-            NodeList duplados = doc.getElementsByTagName("ITEM");
-
-            for (int i = 0; i < duplados.getLength(); i++){
-                Element duplElement = (Element) duplados.item(i);
-                String ibDuplado = duplElement.getAttribute("ITEM_BASE");
-                String refDuplado = duplElement.getAttribute("REFERENCIA");
-
-                if(ibDuplado.startsWith("ES08") || refDuplado.startsWith("ES08")){
-                    // analise.error = "37 MM DUPLADO";
-                    // analise.status = "ERRO";
-                    System.out.println(ibDuplado + "\n" + refDuplado);
-                }
-
-                break;
+            if(duplados.temDuplados(doc)){
+                analise.error = "DUPLADOS";
+                analise.status = "ERRO";
             }
 
         }
