@@ -16,15 +16,20 @@ public class AnalyserService {
     private final ItemVazioService itemVazio;
     private final FerragensService ferragens;
     private final MuxarabiService muxarabi;
+    private final ImportKeyService importKey;
+    private final EspeciaisService especiais;
     private String error;
 
-    public AnalyserService(CoringaService coringa, ArquivoService arquivo, AutofixService autofix, ItemVazioService itemVazio, FerragensService ferragens, MuxarabiService muxarabi){
+    public AnalyserService( CoringaService coringa, ArquivoService arquivo, AutofixService autofix, ItemVazioService itemVazio, 
+                            FerragensService ferragens, MuxarabiService muxarabi, ImportKeyService importKey, EspeciaisService especiais){
         this.coringa = coringa;
         this.arquivo = arquivo;
         this.autofix = autofix;
         this.itemVazio = itemVazio;
         this.ferragens = ferragens;
         this.muxarabi = muxarabi;
+        this.importKey = importKey;
+        this.especiais = especiais;
     }
 
     public class AnaliseTags{
@@ -79,35 +84,11 @@ public class AnalyserService {
             }
 
             // ------------------- VERIFICA O IMPORTKEY -------------------
-            NodeList importKey = doc.getElementsByTagName("IMPORTKEY");
-
-            Element keyElement = (Element) importKey.item(0);
-
-            String codImportKey = keyElement.getAttribute("CODIGO");
-            //COLOCAR CODIGO DEPOIS
-            //System.out.println(codImportKey);
+            importKey.mostrarImportKey(doc);
 
 
             // ------------------- VERIFICA OS ITENS ESPECIAIS -------------------
-            NodeList especias = doc.getElementsByTagName("ITEM");
-
-            for(int i = 0; i < especias.getLength(); i++){
-                Element espElement = (Element) especias.item(i);
-                String refEspeciais = espElement.getAttribute("REFERENCIA");
-                String ibEspeciais = espElement.getAttribute("ITEM_BASE");
-                
-
-                if(refEspeciais.startsWith("ES0") || ibEspeciais.startsWith("ES0")){
-                    String desenho = espElement.getAttribute("DESENHO");
-                    String largura = espElement.getAttribute("LARGURA");
-                    String altura = espElement.getAttribute("ALTURA");
-                    String profundidade = espElement.getAttribute("PROFUNDIDADE");
-                    String descricao = espElement.getAttribute("DESCRICAO");
-
-                    //COLOCAR CODIGO DEPOIS
-                    //System.out.println("Desenho: " +desenho + "\n"+ largura +"\n" + altura + "\n" + profundidade + "\n" + descricao);
-                }
-            }
+            especiais.temEspeciais(doc);
 
 
             // ------------------- VERIFICA OS ITENS DUPLADOS -------------------
