@@ -1,8 +1,6 @@
 package com.bartz.analyzer.service;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
@@ -16,13 +14,17 @@ public class AnalyserService {
     private final ArquivoService arquivo;
     private final AutofixService autofix;
     private final ItemVazioService itemVazio;
+    private final FerragensService ferragens;
+    private final MuxarabiService muxarabi;
     private String error;
 
-    public AnalyserService(CoringaService coringa, ArquivoService arquivo, AutofixService autofix, ItemVazioService itemVazio){
+    public AnalyserService(CoringaService coringa, ArquivoService arquivo, AutofixService autofix, ItemVazioService itemVazio, FerragensService ferragens, MuxarabiService muxarabi){
         this.coringa = coringa;
         this.arquivo = arquivo;
         this.autofix = autofix;
         this.itemVazio = itemVazio;
+        this.ferragens = ferragens;
+        this.muxarabi = muxarabi;
     }
 
     public class AnaliseTags{
@@ -50,32 +52,6 @@ public class AnalyserService {
             }
 
             // ------------------- VERIFICA SEM ITEM FILHO -------------------
-            // NodeList todosItens = doc.getElementsByTagName("ITEM");
-
-            // for (int i = 0; i < todosItens.getLength(); i++) {
-            //     Element item = (Element) todosItens.item(i);
-            //     String preco = item.getAttribute("PRECO_TOTAL");
-
-            //     // Verifica se o preço é exatamente 0.01
-            //     if ("0.01".equals(preco) || "0,01".equals(preco)) {
-                    
-            //         // Procura pela tag <ITEMS> que deve conter os filhos
-            //         NodeList itemsTags = item.getElementsByTagName("ITEMS");
-            //         boolean temFilho = false;
-
-            //         if (itemsTags.getLength() > 0) {
-            //             Element itemsContainer = (Element) itemsTags.item(0);
-
-            //             // Verifica se existe algum <ITEM> dentro de <ITEMS>
-            //             // Note: Usamos uma busca que olha apenas descendentes diretos se necessário, 
-            //             // mas getElementsByTagName("ITEM") dentro do container já resolve.
-            //             NodeList filhos = itemsContainer.getElementsByTagName("ITEM");
-
-            //             if (filhos.getLength() > 0) {
-            //                 temFilho = true;
-            //             }
-            //         }
-
             if (itemVazio.temItemVazio(doc)) {
                 analise.status = "ERRO";
                 if (analise.error.isEmpty()) {
@@ -85,51 +61,21 @@ public class AnalyserService {
                     analise.error += "; SEM ITEM FILHO";
                 }
             }
-            //     }
-            // }
 
             // ------------------- VERIFICA MÁQUINAS (FERRAGENS) -------------------
-            NodeList maquinas = doc.getElementsByTagName("MAQUINA");
-
-            //Cria uma lista única (Set) para guardar os IDs que existem no xml
-            Set<String> idsFerragem = new HashSet<>();
-
-            for (int i = 0; i < maquinas.getLength(); i++) {
-                Element m = (Element) maquinas.item(i);
-
-                // Percorre as tags encontradas e extrai o valor do atributo ID_PLUGIN.
-                idsFerragem.add(m.getAttribute("ID_PLUGIN"));
-            }
-
-            // Lista de máquinas obrigatórias conforme o seu JS
-            String[] obrigatorios = {"2530", "2534", "2341", "2525"};
-
-            for (String id : obrigatorios) {
-                if (!idsFerragem.contains(id)) {
-                    // Se faltar alguma máquina obrigatória, adicionamos o erro "FERRAGENS"
-                    // O status permanece "OK" conforme solicitado
-                    if (analise.error.isEmpty()) {
-                        analise.error = "FERRAGENS";
-                    } else if (!analise.error.contains("FERRAGENS")) {
-                        analise.error += "; FERRAGENS";
-                    }
-                    break;
+            if(ferragens.temFerragem(doc)){
+                if (analise.error.isEmpty()) {
+                    analise.error = "FERRAGENS";
+                } else if (!analise.error.contains("FERRAGENS")) {
+                    analise.error += "; FERRAGENS";
                 }
             }
 
 
             // ------------------- VERIFICA OS MUXARABIS -------------------
-            NodeList muxarabi = doc.getElementsByTagName("ITEM");
-
-            for(int i = 0; i < muxarabi.getLength(); i++){
-                Element muxarabiElement = (Element) muxarabi.item(i);
-                String refMuxarabi = muxarabiElement.getAttribute("REFERENCIA");
-
-                if(refMuxarabi.startsWith("MX6")) {
-                    analise.error = "MUXARABI";
-                    analise.status = "ERRO";
-                }
-                break;
+            if(muxarabi.temMuxarabi(doc)) {
+                analise.error = "MUXARABI";
+                analise.status = "ERRO";
             }
 
             // ------------------- VERIFICA O IMPORTKEY -------------------
