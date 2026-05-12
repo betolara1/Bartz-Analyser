@@ -17,11 +17,12 @@ public class AnalyserService {
     private final ImportKeyService importKey;
     private final EspeciaisService especiais;
     private final DupladosService duplados;
+    private final ItemSemCodigoService itemSemCodigo;
     private String error;
 
     public AnalyserService( CoringaService coringa, ArquivoService arquivo, AutofixService autofix, ItemVazioService itemVazio, 
                             FerragensService ferragens, MuxarabiService muxarabi, ImportKeyService importKey, EspeciaisService especiais,
-                            DupladosService duplados){
+                            DupladosService duplados, ItemSemCodigoService itemSemCodigo){
         this.coringa = coringa;
         this.arquivo = arquivo;
         this.autofix = autofix;
@@ -31,6 +32,7 @@ public class AnalyserService {
         this.importKey = importKey;
         this.especiais = especiais;
         this.duplados = duplados;
+        this.itemSemCodigo = itemSemCodigo;
     }
 
     public class AnaliseTags{
@@ -80,7 +82,7 @@ public class AnalyserService {
             // ------------------- VERIFICA OS MUXARABIS -------------------
             if(muxarabi.temMuxarabi(doc)) {
                 analise.error = "MUXARABI";
-                analise.status = "ERRO";
+                analise.status = "OK";
             }
 
             // ------------------- VERIFICA O IMPORTKEY -------------------
@@ -94,6 +96,12 @@ public class AnalyserService {
             // ------------------- VERIFICA OS ITENS DUPLADOS -------------------
             if(duplados.temDuplados(doc)){
                 analise.error = "DUPLADOS";
+                analise.status = "ERRO";
+            }
+
+            // ------------------- VERIFICA OS ITENS SEM CODIGOS -------------------
+            if(itemSemCodigo.temItemSemCodigo(doc)){
+                analise.error = "SEM CODIGO";
                 analise.status = "ERRO";
             }
 

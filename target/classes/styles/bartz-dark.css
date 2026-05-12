@@ -77,9 +77,17 @@
 }
 
 /* Cores específicas das seções da imagem */
-.section-blue { -fx-text-fill: #3498DB; }
-.section-green { -fx-text-fill: #27AE60; }
-.section-purple { -fx-text-fill: #9B59B6; }
+.section-blue {
+    -fx-text-fill: #3498DB;
+}
+
+.section-green {
+    -fx-text-fill: #27AE60;
+}
+
+.section-purple {
+    -fx-text-fill: #9B59B6;
+}
 
 /* Campo de caminho (Input maior e mais escuro) */
 .path-field {

@@ -81,7 +81,11 @@ public class FilterBar extends HBox {
             "Ok",              // Somente arquivos corretos
             "Erro",            // Somente com erros
             "Ferragens",   // Somente com ferragens
-            "Muxarabi"
+            "Muxarabi",
+            "Coringa",
+            "Item Filho",
+            "Sem Código",
+            "Duplado"
         );
 
         // setValue() define o valor inicial selecionado

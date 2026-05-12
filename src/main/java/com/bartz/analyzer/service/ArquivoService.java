@@ -50,8 +50,6 @@ public class ArquivoService {
                 // Registramos a pasta para nos avisar quando um novo arquivo for CRIADO (ENTRY_CREATE)
                 path.register(watchService, ENTRY_CREATE);
 
-                System.out.println("Monitorando pasta: " + caminhoPasta);
-
                 // Loop infinito de vigília
                 while(true){
                     WatchKey key = watchService.take(); // Espera até algo acontecer

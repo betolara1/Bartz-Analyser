@@ -224,13 +224,7 @@ public class FileTable extends VBox {
                         String trimmed = error.trim();
                         if (!trimmed.isEmpty()) {
                             Label badge = new Label(trimmed);
-                            if ("FERRAGENS".equals(trimmed)) {
-                                badge.getStyleClass().addAll("badge", "badge-ferragens");
-                            } else {
-                                badge.getStyleClass().addAll("badge", "badge-error-tag");
-                            }
-
-                            if ("MUXARABI".equals(trimmed)) {
+                            if ("FERRAGENS".equals(trimmed) || "MUXARABI".equals(trimmed)) {
                                 badge.getStyleClass().addAll("badge", "badge-ferragens");
                             } else {
                                 badge.getStyleClass().addAll("badge", "badge-error-tag");
