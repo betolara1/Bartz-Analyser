@@ -1,5 +1,6 @@
 com\bartz\analyzer\service\ImportKeyService.class
 com\bartz\analyzer\BartzAnalyserApplication.class
+com\bartz\analyzer\ui\details\GeralDetails.class
 com\bartz\analyzer\service\AnalyserService$AnaliseTags.class
 com\bartz\analyzer\ui\FileTable$4.class
 com\bartz\analyzer\service\ArquivoService.class
