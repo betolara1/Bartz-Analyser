@@ -19,6 +19,7 @@ com\bartz\analyzer\ui\FilterBar.class
 com\bartz\analyzer\service\AutofixService.class
 com\bartz\analyzer\ui\details\CoringaDetails$Circle.class
 com\bartz\analyzer\ui\FileTable$5.class
+com\bartz\analyzer\api\ErpAPI.class
 com\bartz\analyzer\ui\FileDetailsView.class
 com\bartz\analyzer\ui\MainLayout.class
 com\bartz\analyzer\service\AnalyserService.class

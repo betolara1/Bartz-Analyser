@@ -342,6 +342,7 @@ public class MainLayout extends BorderPane {
         if (selected == kpiCoringa) return "Coringa";
         if (selected == kpiDuplado) return "Duplado";
         if (selected == kpiSemCodigo) return "Sem Código";
+        if (selected == kpiAutoFixed) return "Auto-Fixed";
         return "Todos";
     }
 
@@ -353,10 +354,33 @@ public class MainLayout extends BorderPane {
             boolean matchesSearch = searchText == null || searchText.isEmpty() || 
                                     row.getFilename().toLowerCase().contains(searchText);
 
-            boolean matchesStatus = statusFilter == null || statusFilter.equals("Todos") ||
-                                    row.getStatus().equalsIgnoreCase(statusFilter);
+            boolean matchesCategory = true;
+            if (statusFilter != null && !statusFilter.equals("Todos")) {
+                String status = row.getStatus().toUpperCase();
+                String errorTags = row.getErrors().toUpperCase();
+                String infoTags = row.getTags().toUpperCase();
+                String autofixTags = row.getAutoFix().toUpperCase();
 
-            return matchesSearch && matchesStatus;
+                if (statusFilter.equals("Ok")) {
+                    matchesCategory = status.equals("OK");
+                } else if (statusFilter.equals("Erro")) {
+                    matchesCategory = status.equals("ERRO");
+                } else if (statusFilter.equals("Ferragens")) {
+                    matchesCategory = status.contains("FERRAGENS") || infoTags.contains("FERRAGENS");
+                } else if (statusFilter.equals("Muxarabi")) {
+                    matchesCategory = errorTags.contains("MUXARABI") || infoTags.contains("MUXARABI");
+                } else if (statusFilter.equals("Coringa")) {
+                    matchesCategory = errorTags.contains("CORINGA");
+                } else if (statusFilter.equals("Duplado")) {
+                    matchesCategory = errorTags.contains("DUPLADO");
+                } else if (statusFilter.equals("Sem Código")) {
+                    matchesCategory = errorTags.contains("SEM CODIGO") || errorTags.contains("SEM CÓDIGO");
+                } else if (statusFilter.equals("Auto-Fixed")) {
+                    matchesCategory = autofixTags != null && !autofixTags.isBlank();
+                }
+            }
+
+            return matchesSearch && matchesCategory;
         });
 
         // Atualiza o contador na barra de filtros
