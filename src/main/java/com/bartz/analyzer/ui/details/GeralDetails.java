@@ -8,6 +8,7 @@ import com.bartz.analyzer.ui.FileDetailsView;
 import com.bartz.analyzer.ui.FileTable;
 
 import javafx.geometry.Pos;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -43,7 +44,7 @@ public class GeralDetails {
         VBox cardData = createCard("DATA DO PROCESSAMENTO", row.getTimestamp(), null);
         grid.add(cardData, 0, 0);
 
-        // Card: Maquinário (Move to row 0, col 1 next to data processamento)
+        // Card: Maquinário
         VBox maquinario = createMaquinario();
         grid.add(maquinario, 1, 0);
 
@@ -52,8 +53,8 @@ public class GeralDetails {
         cardCaminho.setStyle(cardCaminho.getStyle() + "-fx-background-color: #0D0D0D;");
         grid.add(cardCaminho, 0, 1, 2, 1);
 
-        // Card: Inconformidades
-        VBox inconformidades = createInconformidades(row.getErrors());
+        // Card: Inconformidades (Erros e Tags)
+        VBox inconformidades = createFindingsCard(row.getErrors(), row.getTags());
         grid.add(inconformidades, 0, 2);
 
         // Card: Chave de Importação
@@ -69,7 +70,6 @@ public class GeralDetails {
 
         if(nomeArquivo != null && nomeArquivo.length() >= 5){
             String numeroPedido = nomeArquivo.substring(0, 5);
-
             PedidosAPI.retornaComentario(numeroPedido, apiContent, waitIcon, placeholder);
         }
 
@@ -79,134 +79,155 @@ public class GeralDetails {
     private static VBox createCard(String titleStr, String valueStr, javafx.scene.Node customNode) {
         VBox card = new VBox(8);
         card.getStyleClass().add("details-card");
+        
         Label lbl = new Label(titleStr);
         lbl.getStyleClass().add("details-label");
 
         card.getChildren().add(lbl);
-        if (customNode != null)
+        if (customNode != null) {
             card.getChildren().add(customNode);
+        } 
         else {
             Label val = new Label(valueStr);
-            val.setStyle("-fx-text-fill: white; -fx-font-size: 14px;");
+            val.setStyle("-fx-text-fill: white; -fx-font-size: 15px; -fx-font-weight: bold;");
             card.getChildren().add(val);
         }
         return card;
     }
 
-        // --- MÉTODO DAS INCONFORMIDADES (ERROS) ---
-    private static VBox createInconformidades(String errors) {
-        VBox card = new VBox(10);
+    private static VBox createFindingsCard(String errors, String tags) {
+        VBox card = new VBox(15);
         card.getStyleClass().add("details-card");
 
-        Label title = new Label("INCONFORMIDADES");
-        title.getStyleClass().add("details-label");
-        title.setTextFill(Color.web("#E74C3C")); // Vermelho para erro
-        FlowPane flow = new FlowPane(10, 10);
+        // --- Seção de Erros ---
+        VBox sectionErros = new VBox(8);
+        Label titleErros = new Label("INCONFORMIDADES (ERROS)");
+        titleErros.getStyleClass().add("details-label");
+        titleErros.setTextFill(Color.web("#E74C3C"));
+        
+        FlowPane flowErros = new FlowPane(8, 8);
         if (errors == null || errors.isEmpty()) {
-            flow.getChildren().add(new Label("Nenhuma inconformidade encontrada."));
+            Label lbl = new Label("Nenhum erro crítico.");
+            lbl.setStyle("-fx-text-fill: #555555; -fx-font-size: 11px;");
+            flowErros.getChildren().add(lbl);
         } else {
             for (String err : errors.split(";")) {
-                String trimmed = err.trim();
-                Label badge = new Label(trimmed);
-                
-                // 1. Começamos com a classe base de badge
-                badge.getStyleClass().add("badge");
-                // 2. Lógica de cores:
-                if ("FERRAGENS".equals(trimmed) || "MUXARABI".equals(trimmed)) {
-                    // Aplica a cor amarela/laranja (mesma que usamos na tabela principal)
-                    badge.getStyleClass().add("badge-ferragens"); 
-                } else {
-                    // Mantém vermelho para os outros erros
-                    badge.getStyleClass().add("badge-erro");
-                }
-                flow.getChildren().add(badge);
+                Label badge = new Label(err.trim().toUpperCase());
+                badge.getStyleClass().addAll("badge", "badge-erro");
+                flowErros.getChildren().add(badge);
             }
         }
-        card.getChildren().addAll(title, flow);
+        sectionErros.getChildren().addAll(titleErros, flowErros);
+
+        // --- Seção de Tags ---
+        VBox sectionTags = new VBox(8);
+        Label titleTags = new Label("TAGS / INCONSISTÊNCIAS");
+        titleTags.getStyleClass().add("details-label");
+        titleTags.setTextFill(Color.web("#3498DB"));
+        
+        FlowPane flowTags = new FlowPane(8, 8);
+        if (tags == null || tags.isEmpty()) {
+            Label lbl = new Label("Nenhuma tag detectada.");
+            lbl.setStyle("-fx-text-fill: #555555; -fx-font-size: 11px;");
+            flowTags.getChildren().add(lbl);
+        } else {
+            for (String tag : tags.split(";")) {
+                Label badge = new Label(tag.trim().toUpperCase());
+                badge.getStyleClass().addAll("badge", "badge-ferragens"); // Usando a mesma cor azul/amarela da tabela
+                flowTags.getChildren().add(badge);
+            }
+        }
+        sectionTags.getChildren().addAll(titleTags, flowTags);
+
+        card.getChildren().addAll(sectionErros, sectionTags);
         return card;
     }
 
-    // --- MÉTODO DO MAQUINÁRIO ---
-
     private static VBox createMachineBox(String id, String name, boolean ok) {
-        VBox box = new VBox(2);
-        box.getStyleClass().add("machine-box");
-        if (!ok)
-            box.setStyle("-fx-border-color: #E74C3C;");
-        Label lblId = new Label(id);
-        lblId.getStyleClass().add("machine-id");
+        HBox box = new HBox(12);
+        box.setAlignment(Pos.CENTER_LEFT);
+        box.setPadding(new Insets(10, 15, 10, 15));
+        box.setStyle("-fx-background-color: #1A1A1A; -fx-background-radius: 8; -fx-border-color: #2C2C2C; -fx-border-radius: 8;");
+        
+        if (!ok) {
+            box.setStyle(box.getStyle() + "-fx-border-color: #E74C3C; -fx-background-color: rgba(231, 76, 60, 0.05);");
+        }
 
+        FontIcon icon = new FontIcon(ok ? FontAwesomeSolid.CHECK_CIRCLE : FontAwesomeSolid.EXCLAMATION_CIRCLE);
+        icon.setIconSize(16);
+        icon.setIconColor(Color.web(ok ? "#27AE60" : "#E74C3C"));
+
+        VBox text = new VBox(0);
+        Label lblId = new Label(id);
+        lblId.setStyle("-fx-text-fill: #A7A7A7; -fx-font-size: 9px; -fx-font-weight: bold;");
+        
         Label lblName = new Label(name);
-        lblName.getStyleClass().add("machine-name");
-        if (!ok)
-            lblName.setStyle("-fx-text-fill: #E74C3C;");
-        box.getChildren().addAll(lblId, lblName);
-        return box;
+        lblName.setStyle("-fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold;");
+        
+        text.getChildren().addAll(lblId, lblName);
+        box.getChildren().addAll(icon, text);
+        
+        return new VBox(box);
     }
 
     private static VBox createMaquinario() {
         VBox card = new VBox(10);
         card.getStyleClass().add("details-card");
+        
         Label title = new Label("MAQUINÁRIO / PLUGINS (GERADOS)");
         title.getStyleClass().add("details-label");
-        HBox machines = new HBox(10);
+        
+        FlowPane machines = new FlowPane(10, 10);
         machines.getChildren().addAll(
                 createMachineBox("2530", "ASPAN", true),
                 createMachineBox("2534", "NCB612", true),
                 createMachineBox("2341", "CYFLEX 900", true),
                 createMachineBox("2525", "MSZ600", true));
+        
         card.getChildren().addAll(title, machines);
         return card;
     }
 
-
-    // --- MÉTODO DA CHAVE DE IMPORTAÇÃO ---
     private static VBox createImportKeyCard(String erpKey) {
-        VBox card = new VBox(8);
+        VBox card = new VBox(10);
         card.getStyleClass().add("details-card");
+        
         Label lbl = new Label("CHAVE DE IMPORTAÇÃO (ERP)");
         lbl.getStyleClass().add("details-label");
 
-        HBox keyBox = new HBox(10);
+        HBox keyBox = new HBox(15);
         keyBox.setAlignment(Pos.CENTER_LEFT);
-        keyBox.setStyle(
-                "-fx-background-color: #1A1A1A; -fx-padding: 12 16; -fx-background-radius: 4; -fx-cursor: hand;");
+        keyBox.setStyle("-fx-background-color: #0D0D0D; -fx-padding: 15; -fx-background-radius: 8; -fx-border-color: #2C2C2C; -fx-border-radius: 8; -fx-cursor: hand;");
 
-        Label val = new Label(erpKey != null && !erpKey.isEmpty() ? erpKey : "Nenhuma chave encontrada");
-        val.setStyle(
-                "-fx-text-fill: white; -fx-font-size: 16px; -fx-font-family: 'Consolas', 'Courier New', monospace;");
-            
-        // QUEBRA LINHA
+        Label val = new Label(erpKey != null && !erpKey.isEmpty() ? erpKey : "NENHUMA CHAVE ENCONTRADA");
+        val.setStyle("-fx-text-fill: #E0E0E0; -fx-font-size: 14px; -fx-font-family: 'Consolas', monospace;");
         val.setWrapText(true);
-
-        // LARGUMA MAXIMA PRA SABER QUAL LINHA QUEBRAR
-        val.setMaxWidth(500);
-
         HBox.setHgrow(val, Priority.ALWAYS);
 
         FontIcon copyIcon = new FontIcon(FontAwesomeSolid.COPY);
+        copyIcon.setIconSize(18);
         copyIcon.setIconColor(Color.web("#A7A7A7"));
 
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
+        keyBox.getChildren().addAll(val, copyIcon);
 
-        keyBox.getChildren().addAll(val, spacer, copyIcon);
-
-        Tooltip copyTooltip = new Tooltip("Copiar chave");
-        Tooltip.install(keyBox, copyTooltip);
+        keyBox.setOnMouseEntered(e -> keyBox.setStyle(keyBox.getStyle() + "-fx-border-color: #3498DB;"));
+        keyBox.setOnMouseExited(e -> keyBox.setStyle(keyBox.getStyle().replace("-fx-border-color: #3498DB;", "-fx-border-color: #2C2C2C;")));
 
         keyBox.setOnMouseClicked(e -> {
             if (erpKey != null && !erpKey.isEmpty()) {
                 Clipboard clipboard = Clipboard.getSystemClipboard();
-                ClipboardContent clipboardContent = new ClipboardContent();
-                clipboardContent.putString(erpKey);
-                clipboard.setContent(clipboardContent);
+                ClipboardContent content = new ClipboardContent();
+                content.putString(erpKey);
+                clipboard.setContent(content);
 
-                // Feedback visual
-                copyIcon.setIconColor(Color.web("#27AE60")); // Verde
-                javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(
-                        javafx.util.Duration.seconds(1.5));
-                pause.setOnFinished(event -> copyIcon.setIconColor(Color.web("#A7A7A7")));
+                copyIcon.setIconColor(Color.web("#27AE60"));
+                copyIcon.setIconCode(FontAwesomeSolid.CHECK);
+                
+                javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(2));
+                pause.setOnFinished(ev -> {
+                    copyIcon.setIconColor(Color.web("#A7A7A7"));
+                    copyIcon.setIconCode(FontAwesomeSolid.COPY);
+                });
                 pause.play();
             }
         });
@@ -215,28 +236,33 @@ public class GeralDetails {
         return card;
     }
 
-    // --- MÉTODO DAS INFORMAÇÕES DO PEDIDO (API) ---
     private static VBox createOrderInfoCard() {
-        VBox card = new VBox(10);
+        VBox card = new VBox(12);
         card.getStyleClass().add("details-card");
 
         Label title = new Label("INFORMAÇÕES DO PEDIDO");
         title.getStyleClass().add("details-label");
 
-        apiContent = new VBox(15);
+        apiContent = new VBox(20);
         apiContent.setAlignment(Pos.CENTER);
-        apiContent.setStyle(
-                "-fx-padding: 30; -fx-background-color: #0D0D0D; -fx-background-radius: 6; -fx-border-color: #1A1A1A; -fx-border-radius: 6;");
+        apiContent.setMinHeight(120);
+        apiContent.setStyle("-fx-background-color: #0D0D0D; -fx-background-radius: 10; -fx-border-color: #1A1A1A; -fx-border-radius: 10; -fx-padding: 20;");
 
         waitIcon = new FontIcon(FontAwesomeSolid.SYNC);
-        waitIcon.setIconSize(24);
-        waitIcon.setIconColor(Color.web("#A7A7A7"));
+        waitIcon.setIconSize(28);
+        waitIcon.setIconColor(Color.web("#3498DB"));
+        
+        // Animação de rotação para o ícone de espera
+        javafx.animation.RotateTransition rt = new javafx.animation.RotateTransition(javafx.util.Duration.seconds(2), waitIcon);
+        rt.setByAngle(360);
+        rt.setCycleCount(javafx.animation.Animation.INDEFINITE);
+        rt.setInterpolator(javafx.animation.Interpolator.LINEAR);
+        rt.play();
 
-        placeholder = new Label("Buscando informações do pedido...");
-        placeholder.setStyle("-fx-text-fill: #A7A7A7; -fx-font-style: italic;");
+        placeholder = new Label("CONSULTANDO BASE DE DADOS...");
+        placeholder.setStyle("-fx-text-fill: #666666; -fx-font-size: 11px; -fx-font-weight: bold; -fx-letter-spacing: 1px;");
 
         apiContent.getChildren().addAll(waitIcon, placeholder);
-
         card.getChildren().addAll(title, apiContent);
 
         return card;

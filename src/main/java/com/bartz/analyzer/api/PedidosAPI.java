@@ -27,52 +27,48 @@ public class PedidosAPI {
         client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(json -> {
             try{
                 ObjectMapper mapper = new ObjectMapper();
-
-                //Lê o JSON 
                 JsonNode root = mapper.readTree(json);
-                StringBuilder textoCompleto = new StringBuilder();
-
-                // Verifica se é uma lista e percorremos cada item
-                if(root.isArray()){
-                    for (JsonNode item : root) {
-                        // 1. Lemos os valores com um "fallback" (se for nulo, vira vazio)
-                        String titulo = item.path("txt_titulo").isMissingNode() || item.path("txt_titulo").isNull() 
-                                        ? "" : item.path("txt_titulo").asText();
-                                        
-                        String comentario = item.path("txt_comentario").isMissingNode() || item.path("txt_comentario").isNull() 
-                                            ? "" : item.path("txt_comentario").asText();
-
-                        // 2. SÓ MONTA se o comentário não for vazio E não for a palavra "null"
-                        if (!comentario.isEmpty() && !comentario.equalsIgnoreCase("null")) {
-                            
-                            // Se o título for "null" ou vazio, usamos um padrão ou deixamos sem título
-                            String tituloFormatado = (titulo.isEmpty() || titulo.equalsIgnoreCase("null")) 
-                                                    ? "COMENTÁRIO" : titulo.toUpperCase();
-
-                            textoCompleto.append(tituloFormatado)
-                                        .append(":\n")
-                                        .append(comentario)
-                                        .append("\n\n");
-                        }
-                    }
-                }
-
-                String resultadoFinal = textoCompleto.toString().trim();
 
                 Platform.runLater(() -> {
+                    if (apiContent != null) {
+                        apiContent.getChildren().clear();
+                        apiContent.setAlignment(Pos.CENTER_LEFT);
+                        apiContent.setSpacing(15);
+                    }
+
                     if (waitIcon != null) {
                         waitIcon.setVisible(false);
                         waitIcon.setManaged(false);
                     }
 
-                    if (placeholder != null) {
-                        placeholder.setText(resultadoFinal.isEmpty() ? "Pedido sem comentário." : resultadoFinal);
-                        placeholder.setStyle("-fx-text-fill: white; -fx-font-style: italic; -fx-font-size: 14px;");
+                    if (!root.isArray() || root.size() == 0) {
+                        Label empty = new Label("PEDIDO SEM COMENTÁRIOS NO SERVIDOR.");
+                        empty.setStyle("-fx-text-fill: #555555; -fx-font-size: 11px; -fx-font-weight: bold;");
+                        if (apiContent != null) apiContent.getChildren().add(empty);
+                        return;
                     }
 
-                    if (apiContent != null) {
-                        apiContent.setAlignment(Pos.CENTER_LEFT);
-                        apiContent.setStyle(apiContent.getStyle() + "-fx-padding: 20;");
+                    for (JsonNode item : root) {
+                        String titulo = item.path("txt_titulo").isMissingNode() || item.path("txt_titulo").isNull() 
+                                        ? "" : item.path("txt_titulo").asText();
+                        String comentario = item.path("txt_comentario").isMissingNode() || item.path("txt_comentario").isNull() 
+                                            ? "" : item.path("txt_comentario").asText();
+
+                        if (!comentario.isEmpty() && !comentario.equalsIgnoreCase("null")) {
+                            VBox itemBox = new VBox(4);
+                            String tituloFormatado = (titulo.isEmpty() || titulo.equalsIgnoreCase("null")) 
+                                                    ? "COMENTÁRIO" : titulo.toUpperCase();
+
+                            Label lblTitulo = new Label(tituloFormatado);
+                            lblTitulo.setStyle("-fx-text-fill: #3498DB; -fx-font-size: 10px; -fx-font-weight: bold; -fx-letter-spacing: 1px;");
+
+                            Label lblComentario = new Label(comentario);
+                            lblComentario.setWrapText(true);
+                            lblComentario.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
+
+                            itemBox.getChildren().addAll(lblTitulo, lblComentario);
+                            if (apiContent != null) apiContent.getChildren().add(itemBox);
+                        }
                     }
                 });
             } 
@@ -82,10 +78,11 @@ public class PedidosAPI {
                         waitIcon.setVisible(false);
                         waitIcon.setManaged(false);
                     }
-
-                    if (placeholder != null) {
-                        placeholder.setText("Informações do pedido indisponíveis.");
-                        placeholder.setStyle("-fx-text-fill: #E74C3C; -fx-font-style: italic; -fx-font-size: 14px;");
+                    if (apiContent != null) {
+                        apiContent.getChildren().clear();
+                        Label err = new Label("INFORMAÇÕES DO PEDIDO INDISPONÍVEIS.");
+                        err.setStyle("-fx-text-fill: #E74C3C; -fx-font-size: 11px; -fx-font-weight: bold;");
+                        apiContent.getChildren().add(err);
                     }
                 });
             }
