@@ -15,12 +15,18 @@ import java.net.http.HttpResponse;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 
 public class FileDetailsView extends ScrollPane {
 
     private final VBox content;
+    private VBox apiContent;
+    private FontIcon waitIcon;
+    private Label placeholder;
 
     public FileDetailsView(FileTable.FileRow row, Runnable onBack) {
         this.setFitToWidth(true);
@@ -32,7 +38,7 @@ public class FileDetailsView extends ScrollPane {
 
         // --- CABEÇALHO ---
         HBox header = createHeader(row, onBack);
-        
+
         // --- ABAS (VISÃO GERAL / COMPONENTES) ---
         HBox tabs = createTabs();
 
@@ -40,7 +46,6 @@ public class FileDetailsView extends ScrollPane {
         GridPane grid = new GridPane();
         grid.setHgap(20);
         grid.setVgap(20);
-
 
         // FORÇAR AS COLUNAS SEREM DINAMICAS
         ColumnConstraints col1 = new ColumnConstraints();
@@ -50,7 +55,6 @@ public class FileDetailsView extends ScrollPane {
         col2.setPercentWidth(50);
 
         grid.getColumnConstraints().addAll(col1, col2);
-
 
         // Card: Data Processamento
         VBox cardData = createCard("DATA DO PROCESSAMENTO", row.getTimestamp(), null);
@@ -77,6 +81,15 @@ public class FileDetailsView extends ScrollPane {
         VBox orderInfoCard = createOrderInfoCard();
         grid.add(orderInfoCard, 0, 3, 2, 1);
 
+        // MOSTRA AS INFORMAÇÕES DO PEDIDO
+        String nomeArquivo = row.getFilename();
+
+        if(nomeArquivo != null && nomeArquivo.length() >= 5){
+            String numeroPedido = nomeArquivo.substring(0, 5);
+
+            retornaComentario(numeroPedido);
+        }
+
         content.getChildren().addAll(header, tabs, grid);
         this.setContent(content);
     }
@@ -95,7 +108,7 @@ public class FileDetailsView extends ScrollPane {
         title.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;");
         Label subtitle = new Label("ANÁLISE TÉCNICA PROFUNDA DO COMPONENTE");
         subtitle.setStyle("-fx-font-size: 11px; -fx-text-fill: #A7A7A7;");
-        
+
         Label statusBadge = new Label(row.getStatus());
         statusBadge.getStyleClass().addAll("badge", row.getStatus().equals("OK") ? "badge-ok" : "badge-erro");
 
@@ -109,9 +122,10 @@ public class FileDetailsView extends ScrollPane {
         card.getStyleClass().add("details-card");
         Label lbl = new Label(titleStr);
         lbl.getStyleClass().add("details-label");
-        
+
         card.getChildren().add(lbl);
-        if (customNode != null) card.getChildren().add(customNode);
+        if (customNode != null)
+            card.getChildren().add(customNode);
         else {
             Label val = new Label(valueStr);
             val.setStyle("-fx-text-fill: white; -fx-font-size: 14px;");
@@ -120,11 +134,11 @@ public class FileDetailsView extends ScrollPane {
         return card;
     }
 
-     // --- MÉTODO DAS ABAS ---
+    // --- MÉTODO DAS ABAS ---
     private HBox createTabs() {
         HBox tabs = new HBox(20);
         tabs.setAlignment(Pos.CENTER_LEFT);
-        
+
         Button btnGeral = new Button("VISÃO GERAL");
         btnGeral.getStyleClass().addAll("btn-ghost", "tab-active"); // tab-active define a linha verde embaixo
         FontIcon iconGeral = new FontIcon(FontAwesomeSolid.EYE);
@@ -136,11 +150,12 @@ public class FileDetailsView extends ScrollPane {
         tabs.getChildren().addAll(btnGeral, btnComp);
         return tabs;
     }
+
     // --- MÉTODO DAS INCONFORMIDADES (ERROS) ---
     private VBox createInconformidades(String errors) {
         VBox card = new VBox(10);
         card.getStyleClass().add("details-card");
-        
+
         Label title = new Label("INCONFORMIDADES");
         title.getStyleClass().add("details-label");
         title.setTextFill(Color.web("#E74C3C")); // Vermelho para erro
@@ -157,6 +172,7 @@ public class FileDetailsView extends ScrollPane {
         card.getChildren().addAll(title, flow);
         return card;
     }
+
     // --- MÉTODO DO MAQUINÁRIO ---
     private VBox createMaquinario() {
         VBox card = new VBox(10);
@@ -165,24 +181,26 @@ public class FileDetailsView extends ScrollPane {
         title.getStyleClass().add("details-label");
         HBox machines = new HBox(10);
         machines.getChildren().addAll(
-            createMachineBox("2530", "ASPAN", true),
-            createMachineBox("2534", "NCB612", true),
-            createMachineBox("2341", "CYFLEX 900", true),
-            createMachineBox("2525", "MSZ600", true)
-        );
+                createMachineBox("2530", "ASPAN", true),
+                createMachineBox("2534", "NCB612", true),
+                createMachineBox("2341", "CYFLEX 900", true),
+                createMachineBox("2525", "MSZ600", true));
         card.getChildren().addAll(title, machines);
         return card;
     }
+
     private VBox createMachineBox(String id, String name, boolean ok) {
         VBox box = new VBox(2);
         box.getStyleClass().add("machine-box");
-        if(!ok) box.setStyle("-fx-border-color: #E74C3C;");
+        if (!ok)
+            box.setStyle("-fx-border-color: #E74C3C;");
         Label lblId = new Label(id);
         lblId.getStyleClass().add("machine-id");
-        
+
         Label lblName = new Label(name);
         lblName.getStyleClass().add("machine-name");
-        if(!ok) lblName.setStyle("-fx-text-fill: #E74C3C;");
+        if (!ok)
+            lblName.setStyle("-fx-text-fill: #E74C3C;");
         box.getChildren().addAll(lblId, lblName);
         return box;
     }
@@ -196,18 +214,20 @@ public class FileDetailsView extends ScrollPane {
 
         HBox keyBox = new HBox(10);
         keyBox.setAlignment(Pos.CENTER_LEFT);
-        keyBox.setStyle("-fx-background-color: #1A1A1A; -fx-padding: 12 16; -fx-background-radius: 4; -fx-cursor: hand;");
+        keyBox.setStyle(
+                "-fx-background-color: #1A1A1A; -fx-padding: 12 16; -fx-background-radius: 4; -fx-cursor: hand;");
 
         Label val = new Label(erpKey != null && !erpKey.isEmpty() ? erpKey : "Nenhuma chave encontrada");
-        val.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-family: 'Consolas', 'Courier New', monospace;");
+        val.setStyle(
+                "-fx-text-fill: white; -fx-font-size: 16px; -fx-font-family: 'Consolas', 'Courier New', monospace;");
         HBox.setHgrow(val, Priority.ALWAYS);
 
         FontIcon copyIcon = new FontIcon(FontAwesomeSolid.COPY);
         copyIcon.setIconColor(Color.web("#A7A7A7"));
-        
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        
+
         keyBox.getChildren().addAll(val, spacer, copyIcon);
 
         Tooltip copyTooltip = new Tooltip("Copiar chave");
@@ -219,10 +239,11 @@ public class FileDetailsView extends ScrollPane {
                 ClipboardContent clipboardContent = new ClipboardContent();
                 clipboardContent.putString(erpKey);
                 clipboard.setContent(clipboardContent);
-                
+
                 // Feedback visual
                 copyIcon.setIconColor(Color.web("#27AE60")); // Verde
-                javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(1.5));
+                javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(
+                        javafx.util.Duration.seconds(1.5));
                 pause.setOnFinished(event -> copyIcon.setIconColor(Color.web("#A7A7A7")));
                 pause.play();
             }
@@ -236,39 +257,83 @@ public class FileDetailsView extends ScrollPane {
     private VBox createOrderInfoCard() {
         VBox card = new VBox(10);
         card.getStyleClass().add("details-card");
-        
+
         Label title = new Label("INFORMAÇÕES DO PEDIDO");
         title.getStyleClass().add("details-label");
-        
-        VBox apiContent = new VBox(15);
+
+        apiContent = new VBox(15);
         apiContent.setAlignment(Pos.CENTER);
-        apiContent.setStyle("-fx-padding: 30; -fx-background-color: #0D0D0D; -fx-background-radius: 6; -fx-border-color: #1A1A1A; -fx-border-radius: 6;");
-        
-        FontIcon waitIcon = new FontIcon(FontAwesomeSolid.SYNC);
+        apiContent.setStyle(
+                "-fx-padding: 30; -fx-background-color: #0D0D0D; -fx-background-radius: 6; -fx-border-color: #1A1A1A; -fx-border-radius: 6;");
+
+        waitIcon = new FontIcon(FontAwesomeSolid.SYNC);
         waitIcon.setIconSize(24);
         waitIcon.setIconColor(Color.web("#A7A7A7"));
-        
-        Label placeholder = new Label("Aguardando integração com API...");
-        placeholder.setStyle("-fx-text-fill: #A7A7A7; -fx-font-style: italic; -fx-font-size: 14px;");
-        
+
+        placeholder = new Label("Buscando informações do pedido...");
+        placeholder.setStyle("-fx-text-fill: #A7A7A7; -fx-font-style: italic;");
+
         apiContent.getChildren().addAll(waitIcon, placeholder);
-        
+
         card.getChildren().addAll(title, apiContent);
-        
+
         return card;
     }
 
-    // Método reservado para buscar dados da API futuramente
-    public void fetchOrderInfo(String numeroPedido) {
+    // Método que busca os comentarios dos pedidos
+    public void retornaComentario(String numeroPedido) {
         String url = "http://192.168.1.10:8080/api_pedidos.php?num_pedido=" + numeroPedido;
 
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
 
-        client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenAccept(response -> {
-            Platform.runLater(() -> {
-                System.out.println("Resposta: " + response.body());
-            });
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(json -> {
+            try{
+                ObjectMapper mapper = new ObjectMapper();
+
+                //Lê o JSON 
+                JsonNode root = mapper.readTree(json);
+                StringBuilder textoCompleto = new StringBuilder();
+
+                // Verifica se é uma lista e percorremos cada item
+                if(root.isArray()){
+                    for(JsonNode item : root){
+                        // busca o nome dos campos pra retornar o comentario
+                        String titulo = item.path("txt_titulo").asText();
+                        String comentario = item.path("txt_comentario").asText();
+
+                        // MONTA O TITULO + COMENTARIO
+                        if (!comentario.isEmpty()) {
+                            textoCompleto.append(titulo.toUpperCase())
+                                        .append(":\n")
+                                        .append(comentario)
+                                        .append("\n\n"); // Pula linha para o próximo
+                        }
+                    }
+                }
+
+                String resultadoFinal = textoCompleto.toString().trim();
+
+                Platform.runLater(() -> {
+                    waitIcon.setVisible(false);
+                    waitIcon.setManaged(false);
+
+                    placeholder.setText(resultadoFinal.isEmpty() ? "Pedido sem comentário." : resultadoFinal);
+                    placeholder.setStyle("-fx-text-fill: white; -fx-font-style: italic; -fx-font-size: 14px;");
+
+                    apiContent.setAlignment(Pos.CENTER_LEFT);
+                    apiContent.setStyle(apiContent.getStyle() + "-fx-padding: 20;");
+                });
+            } 
+            catch (Exception e) {
+                Platform.runLater(() -> {
+                    waitIcon.setVisible(false);
+                    waitIcon.setManaged(false);
+
+                    placeholder.setText("Informações do pedido indisponíveis.");
+                    placeholder.setStyle("-fx-text-fill: #E74C3C; -fx-font-style: italic; -fx-font-size: 14px;");
+                });
+            }
         });
     }
 }
