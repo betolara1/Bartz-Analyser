@@ -3,6 +3,7 @@ com\bartz\analyzer\BartzAnalyserApplication.class
 com\bartz\analyzer\ui\details\GeralDetails.class
 com\bartz\analyzer\service\AnalyserService$AnaliseTags.class
 com\bartz\analyzer\ui\FileTable$4.class
+com\bartz\analyzer\ui\KpiCard$Circle.class
 com\bartz\analyzer\service\ArquivoService.class
 com\bartz\analyzer\service\ConfigService.class
 com\bartz\analyzer\service\FerragensService.class
@@ -16,11 +17,14 @@ com\bartz\analyzer\service\EspeciaisService.class
 com\bartz\analyzer\service\ItemSemCodigoService.class
 com\bartz\analyzer\ui\FilterBar.class
 com\bartz\analyzer\service\AutofixService.class
+com\bartz\analyzer\ui\details\CoringaDetails$Circle.class
+com\bartz\analyzer\ui\FileTable$5.class
 com\bartz\analyzer\ui\FileDetailsView.class
 com\bartz\analyzer\ui\MainLayout.class
 com\bartz\analyzer\service\AnalyserService.class
 com\bartz\analyzer\service\MuxarabiService.class
 com\bartz\analyzer\service\DupladosService.class
+com\bartz\analyzer\ui\details\CoringaDetails.class
 com\bartz\analyzer\service\CoringaService.class
 com\bartz\analyzer\JavafxApplication$StageReadyEvent.class
 com\bartz\analyzer\ui\FileTable$3.class
@@ -28,4 +32,6 @@ com\bartz\analyzer\ui\HeaderBar.class
 com\bartz\analyzer\ui\FileTable$1.class
 com\bartz\analyzer\ui\KpiCard.class
 com\bartz\analyzer\ui\Circle.class
+com\bartz\analyzer\ui\FileTable$6.class
+com\bartz\analyzer\api\PedidosAPI.class
 com\bartz\analyzer\ui\SettingsLayout.class

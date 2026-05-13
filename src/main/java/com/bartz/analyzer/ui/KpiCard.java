@@ -14,14 +14,8 @@ package com.bartz.analyzer.ui;
 import javafx.scene.control.Label;
 
 // HBox: layout horizontal (filhos lado a lado, como flexbox row)
-import javafx.scene.layout.HBox;
-
-// VBox: layout vertical (filhos empilhados, como flexbox column)
-import javafx.scene.layout.VBox;
-
-// StackPane: empilha filhos um sobre o outro (como position: absolute)
-import javafx.scene.layout.StackPane;
-
+import javafx.scene.layout.*;
+import javafx.geometry.Insets;
 // Pos: enum com posições de alinhamento (CENTER, TOP_LEFT, etc.)
 import javafx.geometry.Pos;
 
@@ -49,138 +43,98 @@ import org.kordamp.ikonli.Ikon;
  *   - StackPane (container do ícone com fundo colorido)
  *   - VBox (título + valor, empilhados verticalmente)
  */
-public class KpiCard extends VBox {
-    // "extends VBox" significa que KpiCard É um VBox.
-    // VBox é um layout que organiza filhos verticalmente.
-    // Herdando dele, nosso KpiCard pode ser adicionado a qualquer layout
-    // como se fosse um VBox normal.
-
-    // --- PROPRIEDADES DO CARD ---
-
-    // Label que mostra o valor numérico (ex: "156")
+public class KpiCard extends HBox {
     private final Label valueLabel;
-
-    // Label que mostra o título (ex: "Recebidos")
     private final Label titleLabel;
+    private final StackPane iconContainer;
+    private final FontIcon fontIcon;
+    private final Circle activeIndicator;
 
-    /**
-     * Construtor do KpiCard.
-     *
-     * @param title  Texto do título (ex: "Recebidos")
-     * @param value  Valor numérico inicial (ex: 156)
-     * @param icon   Ícone do Ikonli (ex: FontAwesomeSolid.FILE_ALT)
-     * @param color  Cor do ícone e do fundo do ícone (ex: "#3498DB")
-     */
     public KpiCard(String title, int value, Ikon icon, String color) {
+        this.setAlignment(Pos.CENTER_LEFT);
+        this.setSpacing(16);
+        this.setPadding(new Insets(16, 20, 16, 20));
+        this.getStyleClass().add("kpi-card");
+        this.setPrefWidth(220);
+        this.setMinWidth(180);
+        this.setPrefHeight(80); // Altura fixa como solicitado
 
-        // --- 1. CRIAR O ÍCONE ---
-
-        // FontIcon cria um ícone vetorial a partir do pack Ikonli.
-        // É como usar <i class="fas fa-file-alt"></i> no HTML.
-        FontIcon fontIcon = new FontIcon(icon);
-
-        // Define o tamanho do ícone em pixels
+        // --- 1. ÍCONE E CONTAINER ---
+        fontIcon = new FontIcon(icon);
         fontIcon.setIconSize(20);
-
-        // Define a cor do ícone usando Color.web() que aceita hex como "#3498DB"
         fontIcon.setIconColor(Color.web(color));
 
-        // --- 2. CONTAINER DO ÍCONE (quadrado colorido atrás do ícone) ---
+        iconContainer = new StackPane(fontIcon);
+        iconContainer.setPrefSize(40, 40);
+        iconContainer.setMinSize(40, 40);
+        iconContainer.setMaxSize(40, 40);
+        iconContainer.setStyle("-fx-background-color: " + color + "1A; -fx-background-radius: 8;");
+        iconContainer.setAlignment(Pos.CENTER);
 
-        // StackPane empilha seus filhos. Aqui, o ícone fica centralizado
-        // dentro de um quadrado com fundo colorido (como um div com background).
-        StackPane iconContainer = new StackPane(fontIcon);
-
-        // Adiciona a classe CSS "kpi-icon-container" para estilizar via CSS
-        iconContainer.getStyleClass().add("kpi-icon-container");
-
-        // Define o fundo do container do ícone.
-        // Usamos a cor com 20% de opacidade (o "33" no final é ~20% em hex).
-        // Isso cria um efeito sutil de fundo, como "background: rgba(52,152,219,0.2)"
-        iconContainer.setStyle(
-            "-fx-background-color: " + color + "33;"  // cor + 33 = 20% opacidade
-        );
-
-        // Define tamanho fixo do container do ícone (36x36 pixels)
-        iconContainer.setPrefSize(36, 36);
-        iconContainer.setMinSize(36, 36);
-        iconContainer.setMaxSize(36, 36);
-
-        // --- 3. LABEL DO TÍTULO ---
-
-        // Label é o componente de texto do JavaFX (como <label> no HTML)
-        titleLabel = new Label(title);
-
-        // Adiciona a classe CSS "kpi-title" para estilizar (cor cinza, fonte pequena)
-        titleLabel.getStyleClass().add("kpi-title");
-
-        // --- 4. LABEL DO VALOR ---
+        // --- 2. TÍTULO E VALOR EM VBOX ---
+        titleLabel = new Label(title.toUpperCase());
+        titleLabel.setStyle("-fx-text-fill: #A7A7A7; -fx-font-size: 10px; -fx-font-weight: bold; -fx-letter-spacing: 0.5px;");
 
         valueLabel = new Label(String.valueOf(value));
+        valueLabel.setStyle("-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;");
 
-        // String.valueOf(value) converte o int para String.
-        // Ex: 156 → "156"
+        VBox textContainer = new VBox(2);
+        textContainer.setAlignment(Pos.CENTER_LEFT);
+        textContainer.getChildren().addAll(titleLabel, valueLabel);
 
-        // Adiciona a classe CSS "kpi-value" para estilizar (fonte grande, branco, bold)
-        valueLabel.getStyleClass().add("kpi-value");
+        // --- 3. INDICADOR ATIVO ---
+        activeIndicator = new Circle(3, Color.web("#3498DB"));
+        activeIndicator.setVisible(false);
+        activeIndicator.setOpacity(0.8);
 
-        // --- 5. VBOX: Empilha título + valor verticalmente ---
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        // VBox organiza filhos de cima para baixo.
-        // Aqui: título em cima, valor embaixo.
-        VBox textBox = new VBox(2);
-        // O "2" é o spacing: 2 pixels de espaço entre título e valor
+        // --- 4. MONTAGEM ---
+        this.getChildren().addAll(iconContainer, textContainer, spacer, activeIndicator);
 
-        // Adiciona os filhos ao VBox (ordem importa: primeiro = topo)
-        textBox.getChildren().addAll(titleLabel, valueLabel);
+        // Hover Effect
+        this.setOnMouseEntered(e -> {
+            if (!isActive()) {
+                this.setStyle("-fx-border-color: #404040; -fx-background-color: #222222;");
+            }
+        });
+        this.setOnMouseExited(e -> {
+            if (!isActive()) {
+                this.setStyle("");
+            }
+        });
 
-        // --- 6. HBOX: Coloca ícone + textos lado a lado ---
-
-        // HBox organiza filhos da esquerda para a direita.
-        // Aqui: ícone à esquerda, textos à direita.
-        HBox content = new HBox(12);
-        // O "12" é o spacing: 12 pixels de espaço entre ícone e textos
-
-        // Alinha verticalmente ao centro (ícone e texto ficam na mesma altura)
-        content.setAlignment(Pos.CENTER_LEFT);
-
-        // Adiciona ícone e textos ao HBox
-        content.getChildren().addAll(iconContainer, textBox);
-
-        // --- 7. CONFIGURAR O CARD (this = o próprio VBox que herdamos) ---
-
-        // Adiciona o HBox como filho deste VBox
-        this.getChildren().add(content);
-
-        // Adiciona a classe CSS "kpi-card" para estilizar (borda, fundo, radius)
-        this.getStyleClass().add("kpi-card");
-
-        // Define que o card deve expandir horizontalmente para preencher o espaço
-        // HBox.setHgrow() diz ao layout pai para dar espaço extra para este nó
-        HBox.setHgrow(this, javafx.scene.layout.Priority.ALWAYS);
+        HBox.setHgrow(this, Priority.ALWAYS);
     }
 
-    // --- MÉTODOS PÚBLICOS ---
+    public void setActive(boolean active) {
+        if (active) {
+            this.setStyle("-fx-border-color: #3498DB; -fx-background-color: #1B1B1B; -fx-effect: dropshadow(three-pass-box, rgba(52, 152, 219, 0.1), 10, 0, 0, 0);");
+            activeIndicator.setVisible(true);
+            activeIndicator.setFill(Color.web("#3498DB"));
+            activeIndicator.setStyle("-fx-effect: dropshadow(three-pass-box, #3498DB, 10, 0.5, 0, 0);");
+        } else {
+            this.setStyle("");
+            activeIndicator.setVisible(false);
+        }
+    }
 
-    /**
-     * Atualiza o valor exibido no card.
-     * Futuramente, quando tiver backend, você pode chamar este método
-     * para atualizar o número de arquivos processados, por exemplo.
-     *
-     * @param newValue novo valor numérico
-     */
+    public boolean isActive() {
+        return activeIndicator.isVisible();
+    }
+
     public void setValue(int newValue) {
-        // setText() muda o texto de um Label — como element.textContent no JS
         valueLabel.setText(String.valueOf(newValue));
     }
 
-    /**
-     * Retorna o valor atual exibido no card.
-     *
-     * @return valor como inteiro
-     */
     public int getValue() {
-        // getText() retorna o texto atual do Label
         return Integer.parseInt(valueLabel.getText());
+    }
+
+    private static class Circle extends javafx.scene.shape.Circle {
+        public Circle(double radius, Color color) {
+            super(radius, color);
+        }
     }
 }

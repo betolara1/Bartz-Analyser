@@ -1,41 +1,15 @@
 package com.bartz.analyzer.ui;
 
-// ============================================================
-// MainLayout.java - Layout principal do Dashboard
-// ============================================================
-// Este é o componente "raiz" que monta toda a tela do dashboard.
-// Ele usa um BorderPane como estrutura principal:
-//
-//   - TOP:    HeaderBar (barra superior)
-//   - CENTER: ScrollPane contendo KPIs + Filtros + Tabela
-//
-// CONCEITO: BorderPane
-// --------------------
-// BorderPane divide a tela em 5 regiões:
-//   ┌──────────────────────┐
-//   │        TOP           │
-//   ├──────┬───────┬───────┤
-//   │ LEFT │ CENTER│ RIGHT │
-//   ├──────┴───────┴───────┤
-//   │       BOTTOM         │
-//   └──────────────────────┘
-//
-// Neste app, usamos apenas TOP e CENTER.
-// ============================================================
-
-// --- IMPORTS ---
-
-// BorderPane: layout com 5 regiões (top, center, left, right, bottom)
 import javafx.scene.layout.BorderPane;
 
 // VBox: layout vertical (filhos empilhados)
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-// HBox: layout horizontal
-import javafx.scene.layout.HBox;
 
 // Priority: controle de crescimento
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.ColumnConstraints;
 // ScrollPane: container com scroll (barra de rolagem)
 // Usado quando o conteúdo pode ser maior que a janela
 import javafx.scene.control.ScrollPane;
@@ -57,29 +31,6 @@ import com.bartz.analyzer.service.ArquivoService;
 import com.bartz.analyzer.service.ConfigService;
 import com.bartz.analyzer.service.AnalyserService.AnaliseTags;
 
-/**
- * MainLayout — Monta a tela inteira do dashboard.
- *
- * Estrutura visual completa:
- * ┌──────────────────────────────────────────────────────────┐
- * │ [B] Bartz Verificador XML [▶ Iniciar] [⟳] [⚙] │ ← HeaderBar
- * ├──────────────────────────────────────────────────────────┤
- * │ │
- * │ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ │ ← KPI Cards
- * │ │ 156 │ │ 142 │ │ 12 │ │ 2 │ │
- * │ │Receb.│ │Corr. │ │Incon.│ │Ferr. │ │
- * │ └──────┘ └──────┘ └──────┘ └──────┘ │
- * │ │
- * │ [▼ Todos] [🔍 Buscar...] 📅 Últimas 24h │ ← FilterBar
- * │ │
- * │ ┌────────┬────────┬──────┬──────┬──────┬──────┐ │ ← FileTable
- * │ │Arquivo │Status │Erros │Fix │Data │Ações │ │
- * │ ├────────┼────────┼──────┼──────┼──────┼──────┤ │
- * │ │ ... │ ... │ ... │ ... │ ... │ ... │ │
- * │ └────────┴────────┴──────┴──────┴──────┴──────┘ │
- * │ │
- * └──────────────────────────────────────────────────────────┘
- */
 public class MainLayout extends BorderPane {
     // MainLayout herda de BorderPane.
     // BorderPane é o layout ideal para telas com "cabeçalho + conteúdo".
@@ -91,10 +42,16 @@ public class MainLayout extends BorderPane {
     private boolean showingSettings = false;
     private boolean isMonitoring = false;
 
-    private final KpiCard kpiRecebidos;
+    private final KpiCard kpiTodos;
     private final KpiCard kpiCorretos;
     private final KpiCard kpiInconformidades;
     private final KpiCard kpiFerragens;
+    private final KpiCard kpiMuxarabi;
+    private final KpiCard kpiCoringa;
+    private final KpiCard kpiDuplado;
+    private final KpiCard kpiSemCodigo;
+    private final KpiCard kpiAutoFixed;
+    
     private final FilterBar filterBar;
     private final FileTable fileTable;
 
@@ -110,65 +67,66 @@ public class MainLayout extends BorderPane {
         this.arquivoService = new ArquivoService();
 
         // === 1. HEADER (topo da tela) ===
-
-        // Cria a barra superior com logo, título e botões
         headerBar = new HeaderBar();
-
-        // setTop() coloca o header na região TOP do BorderPane.
-        // Ele fica fixo no topo, mesmo quando rola o conteúdo.
         this.setTop(headerBar);
 
+        filterBar = new FilterBar();
+
         // === 2. KPI CARDS (indicadores numéricos) ===
+        kpiTodos = new KpiCard("Todos", 0, FontAwesomeSolid.FILTER, "#3498DB");
+        kpiTodos.setActive(true); // Começa ativo
 
-        // Cria 4 cards de KPI com ícones e cores diferentes.
-        // Os valores são mock (fictícios) — futuramente virão do backend.
+        kpiCorretos = new KpiCard("Corretos", 0, FontAwesomeSolid.CHECK_CIRCLE, "#27AE60");
+        kpiInconformidades = new KpiCard("Inconformidades", 0, FontAwesomeSolid.TIMES_CIRCLE, "#E74C3C");
+        kpiFerragens = new KpiCard("Ferragens-Only", 0, FontAwesomeSolid.BOX, "#F39C12");
+        kpiMuxarabi = new KpiCard("Muxarabi", 0, FontAwesomeSolid.TH, "#9B59B6");
+        
+        kpiCoringa = new KpiCard("Cor Coringa", 0, FontAwesomeSolid.TH_LARGE, "#F39C12");
+        kpiDuplado = new KpiCard("Duplado 37mm", 0, FontAwesomeSolid.EXCLAMATION_TRIANGLE, "#E67E22");
+        kpiSemCodigo = new KpiCard("Sem Código", 0, FontAwesomeSolid.EXCLAMATION_CIRCLE, "#E74C3C");
+        kpiAutoFixed = new KpiCard("Auto-Fixed", 0, FontAwesomeSolid.BOLT, "#1ABC9C");
 
-        // Card "Recebidos": ícone de arquivo, cor azul (#3498DB)
-        kpiRecebidos = new KpiCard(
-                "Recebidos", // título
-                0, // valor inicial real
-                FontAwesomeSolid.FILE_ALT, // ícone
-                "#3498DB" // cor azul
-        );
+        // Agrupando cards para lógica de seleção
+        KpiCard[] allCards = {kpiTodos, kpiCorretos, kpiInconformidades, kpiFerragens, kpiMuxarabi, 
+                             kpiCoringa, kpiDuplado, kpiSemCodigo, kpiAutoFixed};
 
-        // Card "Corretos": ícone de check, cor verde (#27AE60)
-        kpiCorretos = new KpiCard(
-                "Corretos",
-                0,
-                FontAwesomeSolid.CHECK_CIRCLE,
-                "#27AE60");
+        for (KpiCard card : allCards) {
+            card.setOnMouseClicked(e -> {
+                for (KpiCard c : allCards) c.setActive(false);
+                card.setActive(true);
+                
+                // Filtra a tabela pelo título do card
+                String filterValue = card.isActive() ? getFilterValueFromTitle(allCards, card) : "Todos";
+                filterBar.getStatusFilter().setValue(filterValue);
+            });
+        }
 
-        // Card "Inconformidades": ícone de X, cor vermelha (#E74C3C)
-        kpiInconformidades = new KpiCard(
-                "Inconformidades",
-                0,
-                FontAwesomeSolid.TIMES_CIRCLE,
-                "#E74C3C");
+        // GridPane para organizar 2 linhas de 5 colunas
+        GridPane kpiGrid = new GridPane();
+        kpiGrid.setHgap(16);
+        kpiGrid.setVgap(16);
 
-        // Card "Ferragens-only": ícone de caixa, cor laranja (#F39C12)
-        kpiFerragens = new KpiCard(
-                "Ferragens-only",
-                0,
-                FontAwesomeSolid.BOX,
-                "#F39C12");
+        // Primeira Linha
+        kpiGrid.add(kpiTodos, 0, 0);
+        kpiGrid.add(kpiCorretos, 1, 0);
+        kpiGrid.add(kpiInconformidades, 2, 0);
+        kpiGrid.add(kpiFerragens, 3, 0);
+        kpiGrid.add(kpiMuxarabi, 4, 0);
 
-        // HBox para colocar os 4 cards lado a lado
-        HBox kpiRow = new HBox(16);
-        // 16px de espaço entre cards
+        // Segunda Linha
+        kpiGrid.add(kpiCoringa, 0, 1);
+        kpiGrid.add(kpiDuplado, 1, 1);
+        kpiGrid.add(kpiSemCodigo, 2, 1);
+        kpiGrid.add(kpiAutoFixed, 3, 1);
 
-        // Adiciona os 4 cards ao HBox
-        kpiRow.getChildren().addAll(
-                kpiRecebidos,
-                kpiCorretos,
-                kpiInconformidades,
-                kpiFerragens);
-
-        // Padding no HBox dos KPIs
-        kpiRow.setPadding(new Insets(0));
+        // Força colunas a terem o mesmo tamanho
+        for (int i = 0; i < 5; i++) {
+            ColumnConstraints cc = new ColumnConstraints();
+            cc.setPercentWidth(20);
+            kpiGrid.getColumnConstraints().add(cc);
+        }
 
         // === 3. FILTROS (barra de busca e filtros) ===
-
-        filterBar = new FilterBar();
         
         // Escuta o campo de busca (cada letra digitada)
         filterBar.getSearchField().textProperty().addListener((obs, oldVal, newVal) -> applyFilters());
@@ -200,7 +158,7 @@ public class MainLayout extends BorderPane {
 
         // Adiciona os 3 componentes na ordem vertical
         contentArea.getChildren().addAll(
-                kpiRow, // Topo: KPI cards
+                kpiGrid, // Topo: KPI grid (2 linhas)
                 filterBar, // Meio: filtros
                 fileTable // Baixo: tabela (cresce)
         );
@@ -306,10 +264,13 @@ public class MainLayout extends BorderPane {
                                     analise.status,
                                     analise.error,
                                     analise.autofix,
+                                    analise.tags,
                                     LocalDateTime.now().format(formatter),
                                     file.getAbsolutePath(),
                                     analise.erpKey));
                         }
+                        updateKpis();
+                        applyFilters();
                         arquivoService.monitorarArquivos(inputPath);
                     }
                 } else {
@@ -342,9 +303,9 @@ public class MainLayout extends BorderPane {
         return headerBar;
     }
 
-    /** Retorna o KPI de "Recebidos" */
-    public KpiCard getKpiRecebidos() {
-        return kpiRecebidos;
+    /** Retorna o KPI de "Todos" */
+    public KpiCard getKpiTodos() {
+        return kpiTodos;
     }
 
     /** Retorna o KPI de "Corretos" */
@@ -372,21 +333,77 @@ public class MainLayout extends BorderPane {
         return fileTable;
     }
 
+    private String getFilterValueFromTitle(KpiCard[] cards, KpiCard selected) {
+        if (selected == kpiTodos) return "Todos";
+        if (selected == kpiCorretos) return "Ok";
+        if (selected == kpiInconformidades) return "Erro";
+        if (selected == kpiFerragens) return "Ferragens";
+        if (selected == kpiMuxarabi) return "Muxarabi";
+        if (selected == kpiCoringa) return "Coringa";
+        if (selected == kpiDuplado) return "Duplado";
+        if (selected == kpiSemCodigo) return "Sem Código";
+        return "Todos";
+    }
+
     private void applyFilters(){
         String searchText = filterBar.getSearchField().getText().toLowerCase();
         String statusFilter = filterBar.getStatusFilter().getValue();
 
         filteredList.setPredicate(row -> {
-            // filtro do texto
             boolean matchesSearch = searchText == null || searchText.isEmpty() || 
                                     row.getFilename().toLowerCase().contains(searchText);
 
-             // Filtro de Status
             boolean matchesStatus = statusFilter == null || statusFilter.equals("Todos") ||
                                     row.getStatus().equalsIgnoreCase(statusFilter);
 
-            // Retorna TRUE se passar nas duas regras
             return matchesSearch && matchesStatus;
         });
+
+        // Atualiza o contador na barra de filtros
+        filterBar.updateCount(filteredList.size(), fileTable.getData().size());
+        
+        // Sempre que aplicar filtros, opcionalmente atualizar KPIs se quiser que eles mostrem o filtrado
+        // mas geralmente KPIs mostram o total global. Se o usuário quiser global:
+        updateKpis();
+    }
+
+    private void updateKpis() {
+        int todos = fileTable.getData().size();
+        int corretos = 0;
+        int erros = 0;
+        int ferragens = 0;
+        int muxarabi = 0;
+        int coringa = 0;
+        int duplado = 0;
+        int semCodigo = 0;
+        int autoFixed = 0;
+
+        for (FileTable.FileRow row : fileTable.getData()) {
+            String status = row.getStatus().toUpperCase();
+            String errorTags = row.getErrors().toUpperCase();
+            String autofixTags = row.getAutoFix().toUpperCase();
+            String infoTags = row.getTags().toUpperCase();
+
+            if (status.equals("OK")) corretos++;
+            if (status.equals("ERRO")) erros++;
+            if (status.contains("FERRAGENS") || infoTags.contains("FERRAGENS")) ferragens++;
+
+            if (errorTags.contains("MUXARABI") || infoTags.contains("MUXARABI")) muxarabi++;
+            if (errorTags.contains("CORINGA")) coringa++;
+            if (errorTags.contains("DUPLADO") || errorTags.contains("DUPLADOS")) duplado++;
+            if (errorTags.contains("SEM CÓDIGO") || errorTags.contains("SEM CODIGO")) semCodigo++;
+
+            if (autofixTags != null && !autofixTags.isBlank()) autoFixed++;
+        }
+
+        kpiTodos.setValue(todos);
+        kpiCorretos.setValue(corretos);
+        kpiInconformidades.setValue(erros);
+        kpiFerragens.setValue(ferragens);
+        kpiMuxarabi.setValue(muxarabi);
+        kpiCoringa.setValue(coringa);
+        kpiDuplado.setValue(duplado);
+        kpiSemCodigo.setValue(semCodigo);
+        kpiAutoFixed.setValue(autoFixed);
     }
 }

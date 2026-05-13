@@ -1,27 +1,5 @@
 package com.bartz.analyzer.ui;
 
-// ============================================================
-// FileTable.java - Tabela de arquivos processados
-// ============================================================
-// Este componente cria uma TableView (tabela) que exibe os
-// arquivos XML processados, com colunas para nome, status,
-// erros, auto-fix, data/hora e ações.
-//
-// Equivale ao <Table> do EnhancedDashboard.tsx no React.
-//
-// CONCEITO IMPORTANTE: TableView no JavaFX
-// -----------------------------------------
-// No JavaFX, uma tabela precisa de:
-// 1. Um "modelo de dados" (classe que representa uma linha)
-// 2. Colunas (TableColumn) que dizem qual dado mostrar
-// 3. Uma lista observável (ObservableList) com os dados
-//
-// Quando você adiciona/remove itens da ObservableList,
-// a tabela se atualiza automaticamente! Isso é "data binding".
-// ============================================================
-
-// --- IMPORTS ---
-
 // TableView: o componente de tabela principal
 import javafx.scene.control.TableView;
 
@@ -37,15 +15,8 @@ import javafx.scene.control.Button;
 // Label: texto
 import javafx.scene.control.Label;
 
-// Tooltip: dica ao passar o mouse
-import javafx.scene.control.Tooltip;
-
 // HBox: layout horizontal (para botões de ação e badges)
 import javafx.scene.layout.HBox;
-
-// FlowPane: layout que "quebra linha" quando não cabe — perfeito
-// para exibir múltiplos badges de erro que podem variar em quantidade
-import javafx.scene.layout.FlowPane;
 
 // VBox: layout vertical (container externo)
 import javafx.scene.layout.VBox;
@@ -77,22 +48,11 @@ import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 
 // Color: cor para ícones
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 
 import java.util.function.Consumer;
+import javafx.scene.layout.FlowPane;
 
-/**
- * FileTable — Tabela de arquivos processados.
- *
- * Estrutura visual:
- * ┌────────────┬──────────┬───────────────────┬──────────┬──────────────┬────────┐
- * │ Arquivo │ Status │ Erros │ Auto-fix │ Data/Hora │ Ações │
- * ├────────────┼──────────┼───────────────────┼──────────┼──────────────┼────────┤
- * │ PED_123.xml│ [OK] │ — │ QTD 0→1 │ 15/01 14:30 │ 👁 📂 │
- * │ PED_456.xml│ [ERRO] │ [ItemSemPreco] │ — │ 15/01 14:28 │ 👁 📂 │
- * └────────────┴──────────┴───────────────────┴──────────┴──────────────┴────────┘
- *
- * Usa dados mock (fictícios) para demonstração visual.
- */
 public class FileTable extends VBox {
     // FileTable herda de VBox — é um container vertical que
     // envolve a TableView com estilo.
@@ -127,231 +87,164 @@ public class FileTable extends VBox {
         // === 3. CRIAR AS COLUNAS ===
 
         // --- Coluna "Arquivo" ---
-        // TableColumn<FileRow, String> = coluna de uma tabela de FileRows que mostra
-        // String
-        TableColumn<FileRow, String> colFilename = new TableColumn<>("Arquivo");
-
-        // setCellValueFactory() conecta a coluna a um dado do FileRow.
-        // PropertyValueFactory("filename") vai chamar getFilename() do FileRow.
+        TableColumn<FileRow, String> colFilename = new TableColumn<>("ARQUIVO");
         colFilename.setCellValueFactory(new PropertyValueFactory<>("filename"));
-
-        // setPrefWidth() define a largura preferida da coluna
         colFilename.setPrefWidth(280);
-
-        // setStyle() aplica CSS inline — aqui usamos fonte monospace para nomes de
-        // arquivo
-        colFilename.setStyle("-fx-font-family: 'Consolas', 'Courier New', monospace;");
+        
+        colFilename.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String filename, boolean empty) {
+                super.updateItem(filename, empty);
+                if (empty || filename == null) {
+                    setGraphic(null);
+                } else {
+                    FileRow row = getTableView().getItems().get(getIndex());
+                    HBox box = new HBox(10);
+                    box.setAlignment(Pos.CENTER_LEFT);
+                    
+                    Color dotColor = "OK".equals(row.getStatus()) ? Color.web("#27AE60") : Color.web("#E74C3C");
+                    Circle dot = new Circle(3, dotColor); // Dot indicator
+                    Label lbl = new Label(filename);
+                    lbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-family: 'Inter';");
+                    
+                    box.getChildren().addAll(dot, lbl);
+                    setGraphic(box);
+                }
+            }
+        });
 
         // --- Coluna "Status" ---
-        TableColumn<FileRow, String> colStatus = new TableColumn<>("Status");
+        TableColumn<FileRow, String> colStatus = new TableColumn<>("STATUS");
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
-        colStatus.setPrefWidth(120);
-
-        // setCellFactory() permite customizar COMO a célula é renderizada.
-        // Aqui, ao invés de texto puro, mostramos um badge colorido.
+        colStatus.setPrefWidth(100);
         colStatus.setCellFactory(column -> new TableCell<>() {
-            // Este bloco é uma "classe anônima" — uma classe sem nome
-            // que herda de TableCell. É como um "componente inline".
-
             @Override
             protected void updateItem(String status, boolean empty) {
-                // updateItem() é chamado pelo JavaFX toda vez que a célula
-                // precisa se redesenhar (scroll, atualização de dados, etc.)
-
-                // SEMPRE chame super.updateItem() primeiro!
                 super.updateItem(status, empty);
-
                 if (empty || status == null) {
-                    // Se a célula está vazia (sem dados), limpa o conteúdo
                     setGraphic(null);
-                    setText(null);
                 } else {
-                    // Cria um Label com o texto do status
                     Label badge = new Label(status);
-
-                    // Adiciona a classe CSS base "badge"
                     badge.getStyleClass().add("badge");
-
-                    // Adiciona a classe CSS específica baseada no status
-                    switch (status) {
-                        case "OK":
-                            badge.getStyleClass().add("badge-ok");
-                            break;
-                        case "ERRO":
-                            badge.getStyleClass().add("badge-erro");
-                            break;
-                        case "FERRAGENS":
-                            badge.setText("FERRAGENS-ONLY");
-                            badge.getStyleClass().add("badge-ferragens");
-                            break;
-                        case "MUXARABI":
-                            badge.setText("MUXARABI");
-                            badge.getStyleClass().add("badge-ferragens");
-                            break;
-                    }
-
-                    // setGraphic() coloca um Node (componente visual) na célula
-                    // ao invés de texto puro
+                    if ("ERRO".equals(status)) badge.getStyleClass().add("badge-erro");
+                    else if ("OK".equals(status)) badge.getStyleClass().add("badge-ok");
+                    else badge.getStyleClass().add("badge-ferragens");
+                    
                     setGraphic(badge);
-
-                    // Remove o texto padrão (usamos o badge no lugar)
-                    setText(null);
                 }
             }
         });
 
         // --- Coluna "Erros" ---
-        TableColumn<FileRow, String> colErrors = new TableColumn<>("Erros");
+        TableColumn<FileRow, String> colErrors = new TableColumn<>("INCONFORMIDADES (ERROS)");
         colErrors.setCellValueFactory(new PropertyValueFactory<>("errors"));
         colErrors.setPrefWidth(250);
-
-        // Customiza a renderização para mostrar badges de erro
         colErrors.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(String errors, boolean empty) {
                 super.updateItem(errors, empty);
-
                 if (empty || errors == null || errors.isBlank()) {
                     setGraphic(null);
-                    setText(null);
                 } else {
-                    // FlowPane: layout que organiza filhos em "fluxo".
-                    // Se não cabe na linha, quebra para a próxima.
-                    // Perfeito para badges que variam em quantidade.
-                    FlowPane flow = new FlowPane();
-                    flow.setHgap(4); // espaço horizontal entre badges
-                    flow.setVgap(4); // espaço vertical entre linhas
-
-                    // Separa a string de erros por ";" e cria um badge para cada
-                    String[] errorList = errors.split(";");
-                    for (String error : errorList) {
-                        String trimmed = error.trim();
-                        if (!trimmed.isEmpty()) {
-                            Label badge = new Label(trimmed);
-                            if ("FERRAGENS".equals(trimmed) || "MUXARABI".equals(trimmed)) {
-                                badge.getStyleClass().addAll("badge", "badge-ferragens");
-                            } else {
-                                badge.getStyleClass().addAll("badge", "badge-error-tag");
-                            }
-                            // A LINHA ABAIXO ESTAVA FALTANDO:
-                            flow.getChildren().add(badge); 
-                        }
+                    FlowPane flow = new FlowPane(4, 4);
+                    String[] list = errors.split(";");
+                    for (String err : list) {
+                        Label lbl = new Label(err.trim().toUpperCase());
+                        lbl.setStyle("-fx-background-color: rgba(231, 76, 60, 0.1); -fx-text-fill: #E74C3C; -fx-border-color: rgba(231, 76, 60, 0.2); -fx-padding: 2 8; -fx-font-size: 9px; -fx-font-weight: bold; -fx-background-radius: 2; -fx-border-radius: 2;");
+                        flow.getChildren().add(lbl);
                     }
-
                     setGraphic(flow);
-                    setText(null);
                 }
             }
         });
 
         // --- Coluna "Auto-fix" ---
-        TableColumn<FileRow, String> colAutoFix = new TableColumn<>("Auto-fix");
+        TableColumn<FileRow, String> colAutoFix = new TableColumn<>("AUTO-FIX");
         colAutoFix.setCellValueFactory(new PropertyValueFactory<>("autoFix"));
-        colAutoFix.setPrefWidth(180);
-
-        // Renderiza badges de auto-fix (verde/teal)
+        colAutoFix.setPrefWidth(150);
         colAutoFix.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(String autoFix, boolean empty) {
                 super.updateItem(autoFix, empty);
-
                 if (empty || autoFix == null || autoFix.isBlank()) {
                     setGraphic(null);
-                    setText(null);
                 } else {
-                    FlowPane flow = new FlowPane();
-                    flow.setHgap(4);
-                    flow.setVgap(4);
-
-                    String[] fixes = autoFix.split(";");
-                    for (String fix : fixes) {
-                        String trimmed = fix.trim();
-                        if (!trimmed.isEmpty()) {
-                            Label badge = new Label(trimmed);
-                            badge.getStyleClass().addAll("badge", "badge-autofix");
-                            flow.getChildren().add(badge);
-                        }
+                    FlowPane flow = new FlowPane(4, 4);
+                    String[] list = autoFix.split(";");
+                    for (String fix : list) {
+                        Label lbl = new Label(fix.trim().toUpperCase());
+                        lbl.setStyle("-fx-background-color: rgba(26, 188, 156, 0.1); -fx-text-fill: #1ABC9C; -fx-border-color: rgba(26, 188, 156, 0.2); -fx-padding: 2 8; -fx-font-size: 9px; -fx-font-weight: bold; -fx-background-radius: 2; -fx-border-radius: 2;");
+                        flow.getChildren().add(lbl);
                     }
-
                     setGraphic(flow);
-                    setText(null);
+                }
+            }
+        });
+
+        // --- Coluna "Tags" ---
+        TableColumn<FileRow, String> colTags = new TableColumn<>("TAGS");
+        colTags.setCellValueFactory(new PropertyValueFactory<>("tags"));
+        colTags.setPrefWidth(150);
+        colTags.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String tags, boolean empty) {
+                super.updateItem(tags, empty);
+                if (empty || tags == null || tags.isBlank()) {
+                    setGraphic(null);
+                } else {
+                    FlowPane flow = new FlowPane(4, 4);
+                    String[] list = tags.split(";");
+                    for (String tag : list) {
+                        Label lbl = new Label(tag.trim().toUpperCase());
+                        lbl.setStyle("-fx-background-color: rgba(52, 152, 219, 0.1); -fx-text-fill: #3498DB; -fx-border-color: rgba(52, 152, 219, 0.2); -fx-padding: 2 8; -fx-font-size: 9px; -fx-font-weight: bold; -fx-background-radius: 2; -fx-border-radius: 2;");
+                        flow.getChildren().add(lbl);
+                    }
+                    setGraphic(flow);
                 }
             }
         });
 
         // --- Coluna "Data/Hora" ---
-        TableColumn<FileRow, String> colTimestamp = new TableColumn<>("Data/Hora");
+        TableColumn<FileRow, String> colTimestamp = new TableColumn<>("DATA / HORA");
         colTimestamp.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
         colTimestamp.setPrefWidth(150);
-
-        // Estilo inline para texto cinza
-        colTimestamp.setStyle("-fx-text-fill: #A7A7A7;");
+        colTimestamp.setStyle("-fx-text-fill: #A7A7A7; -fx-font-size: 11px;");
 
         // --- Coluna "Ações" ---
-        TableColumn<FileRow, Void> colActions = new TableColumn<>("Ações");
-        colActions.setPrefWidth(100);
-
-        // Coluna de ações: não tem dados, só botões.
-        // O tipo é <FileRow, Void> porque não existe um "valor" para esta coluna.
+        TableColumn<FileRow, Void> colActions = new TableColumn<>("AÇÕES");
+        colActions.setPrefWidth(120);
         colActions.setCellFactory(column -> new TableCell<>() {
-            // Cria os botões uma vez (não recria a cada updateItem)
             private final Button btnView = new Button();
             private final Button btnFolder = new Button();
-            private final HBox actionBox = new HBox(4);
+            private final HBox actionBox = new HBox(8);
 
-            // Bloco de inicialização — roda quando a célula é criada
             {
-                // Ícone "olho" para ver detalhes
                 FontIcon eyeIcon = new FontIcon(FontAwesomeSolid.EYE);
                 eyeIcon.setIconSize(14);
                 eyeIcon.setIconColor(Color.web("#A7A7A7"));
                 btnView.setGraphic(eyeIcon);
                 btnView.getStyleClass().add("btn-ghost");
-                btnView.setTooltip(new Tooltip("Ver detalhes"));
 
-                btnView.setOnAction(e -> {
-                    FileRow rowData = getTableView().getItems().get(getIndex());
-                    if (onViewDetails != null) {
-                        onViewDetails.accept(rowData); // Avisa quem estiver ouvindo!
-                    }
-                });
-
-                // Ícone "pasta" para abrir no explorador
                 FontIcon folderIcon = new FontIcon(FontAwesomeSolid.FOLDER_OPEN);
                 folderIcon.setIconSize(14);
                 folderIcon.setIconColor(Color.web("#A7A7A7"));
                 btnFolder.setGraphic(folderIcon);
                 btnFolder.getStyleClass().add("btn-ghost");
-                btnFolder.setTooltip(new Tooltip("Abrir na pasta"));
 
-                btnFolder.setOnAction(e -> {
-                    FileRow row = getTableView().getItems().get(getIndex());
-                    String path = row.getFullPath();
-
-                    if (path != null && !path.isEmpty()) {
-                        try {
-                            // Comando para abrir o explorer e selecionar o arquivo
-                            new ProcessBuilder("explorer.exe", "/select,", path).start();
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                    }
-                });
-
-                // Agrupa botões lado a lado
                 actionBox.setAlignment(Pos.CENTER);
+                actionBox.setStyle("-fx-background-color: #111111; -fx-background-radius: 6; -fx-padding: 4 8;");
                 actionBox.getChildren().addAll(btnView, btnFolder);
+                
+                btnView.setOnAction(e -> {
+                    FileRow row = getTableView().getItems().get(getIndex());
+                    if (onViewDetails != null) onViewDetails.accept(row);
+                });
             }
 
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-
-                if (empty) {
-                    setGraphic(null);
-                } else {
-                    setGraphic(actionBox);
-                }
+                setGraphic(empty ? null : actionBox);
             }
         });
 
@@ -361,12 +254,13 @@ public class FileTable extends VBox {
         // addAll() adiciona todas as colunas de uma vez.
         // A ORDEM aqui define a ordem visual das colunas.
         table.getColumns().addAll(
-                colFilename, // 1ª coluna
-                colStatus, // 2ª coluna
-                colErrors, // 3ª coluna
-                colAutoFix, // 4ª coluna
-                colTimestamp, // 5ª coluna
-                colActions // 6ª coluna
+                colFilename,
+                colStatus,
+                colErrors,
+                colAutoFix,
+                colTags,
+                colTimestamp,
+                colActions
         );
 
         // COLUMN_RESIZE_POLICY define como as colunas se redimensionam:
@@ -434,6 +328,7 @@ public class FileTable extends VBox {
         private final SimpleStringProperty status;
         private final SimpleStringProperty errors;
         private final SimpleStringProperty autoFix;
+        private final SimpleStringProperty tags;
         private final SimpleStringProperty timestamp;
         private final SimpleStringProperty fullPath;
         private final SimpleStringProperty erpKey;
@@ -446,17 +341,19 @@ public class FileTable extends VBox {
          * @param status    Status: "OK", "ERRO", "FERRAGENS"
          * @param errors    Erros separados por ";" (ou "" se nenhum)
          * @param autoFix   Auto-fixes separados por ";" (ou "" se nenhum)
+         * @param tags      Tags informativas (MUXARABI, FERRAGENS)
          * @param timestamp Data/hora do processamento
          * @param fullPath  Caminho completo da pasta 
          * @param erpKey    Chave de importação do ERP
          */
         public FileRow(String filename, Object status, String errors,
-                String autoFix, String timestamp, String fullPath, String erpKey) {
+                String autoFix, String tags, String timestamp, String fullPath, String erpKey) {
             // new SimpleStringProperty(valor) cria a property com valor inicial
             this.filename = new SimpleStringProperty(filename);
             this.status = new SimpleStringProperty(String.valueOf(status));
             this.errors = new SimpleStringProperty(errors);
             this.autoFix = new SimpleStringProperty(autoFix);
+            this.tags = new SimpleStringProperty(tags);
             this.timestamp = new SimpleStringProperty(timestamp);
             this.fullPath = new SimpleStringProperty(fullPath);
             this.erpKey = new SimpleStringProperty(erpKey);
@@ -484,6 +381,11 @@ public class FileTable extends VBox {
         /** Retorna os auto-fixes (separados por ";") */
         public String getAutoFix() {
             return autoFix.get();
+        }
+
+        /** Retorna as tags (separadas por ";") */
+        public String getTags() {
+            return tags.get();
         }
 
         /** Retorna a data/hora */
@@ -524,6 +426,11 @@ public class FileTable extends VBox {
         /** Property do auto-fix — para binding reativo */
         public SimpleStringProperty autoFixProperty() {
             return autoFix;
+        }
+
+        /** Property das tags — para binding reativo */
+        public SimpleStringProperty tagsProperty() {
+            return tags;
         }
 
         /** Property do timestamp — para binding reativo */

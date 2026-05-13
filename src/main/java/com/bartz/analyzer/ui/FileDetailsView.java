@@ -10,6 +10,7 @@ import javafx.scene.paint.Color;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import com.bartz.analyzer.ui.details.CoringaDetails;
 import com.bartz.analyzer.ui.details.GeralDetails;
 
 public class FileDetailsView extends ScrollPane {
@@ -81,13 +82,17 @@ public class FileDetailsView extends ScrollPane {
         iconGeral.setIconColor(Color.web("#27AE60"));
         btnGeral.setGraphic(iconGeral);
 
+        btnGeral.setOnAction(e -> switchTab(btnGeral, GeralDetails.build(row, this)));
+
         tabs.getChildren().addAll(btnGeral);
 
         // ABAS DOS ERROS CONDICIONAIS
         String erros = row.getErrors();
 
         if (erros.contains("CORINGA")) {
-            tabs.getChildren().add(createTabButton("CORINGA", FontAwesomeSolid.MAGIC, false));
+            Button btnCoringa = createTabButton("CORINGA", FontAwesomeSolid.MAGIC, false);
+            btnCoringa.setOnAction(e -> switchTab(btnCoringa, CoringaDetails.build(row.getFilename())));
+            tabs.getChildren().add(btnCoringa);
         }
         if (erros.contains("SEM ITEM FILHO")) {
             tabs.getChildren().add(createTabButton("ITENS FILHOS", FontAwesomeSolid.SITEMAP, false));
@@ -117,7 +122,7 @@ public class FileDetailsView extends ScrollPane {
         return btn;
     }
 
-    private void switchTabs(Button button, Node view){
+    private void switchTab(Button button, Node view){
         if(activeTab != null){
             activeTab.getStyleClass().remove("tab-active");
 

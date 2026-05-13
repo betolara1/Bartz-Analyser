@@ -39,6 +39,7 @@ public class AnalyserService {
         public String status = "OK";
         public String error = "";
         public String autofix = "";
+        public String tags = "";
         public String erpKey;
     }
 
@@ -57,7 +58,7 @@ public class AnalyserService {
             // ------------------- Verifica e Corrige Autofix -------------------
             String resultadoAutofix = autofix.temAutofix(doc, file);
             if (resultadoAutofix != null) {
-                analise.autofix = resultadoAutofix; // Aqui agora vai aparecer "QUANTIDADE (1) | PREÇO (2)"
+                analise.autofix = resultadoAutofix;
             }
 
             // ------------------- VERIFICA SEM ITEM FILHO -------------------
@@ -73,21 +74,20 @@ public class AnalyserService {
 
             // ------------------- VERIFICA MÁQUINAS (FERRAGENS) -------------------
             if(ferragens.temFerragem(doc)){
-                if (analise.error.isEmpty()) {
-                    analise.error = "FERRAGENS";
-                } else if (!analise.error.contains("FERRAGENS")) {
-                    analise.error += "; FERRAGENS";
+                if (analise.tags.isEmpty()) {
+                    analise.tags = "FERRAGENS";
+                } else if (!analise.tags.contains("FERRAGENS")) {
+                    analise.tags += "; FERRAGENS";
                 }
             }
 
             // ------------------- VERIFICA OS MUXARABIS -------------------
             if(muxarabi.temMuxarabi(doc)) {
-                if (analise.error.isEmpty()) {
-                    analise.error = "MUXARABI";
-                } else if (!analise.error.contains("MUXARABI")) {
-                    analise.error += "; MUXARABI";
+                if (analise.tags.isEmpty()) {
+                    analise.tags = "MUXARABI";
+                } else if (!analise.tags.contains("MUXARABI")) {
+                    analise.tags += "; MUXARABI";
                 }
-                analise.status = "OK";
             }
 
             // ------------------- VERIFICA O IMPORTKEY -------------------
@@ -100,6 +100,7 @@ public class AnalyserService {
 
             // ------------------- VERIFICA OS ITENS DUPLADOS -------------------
             if(duplados.temDuplados(doc)){
+                analise.status = "ERRO";
                 if (analise.error.isEmpty()) {
                     analise.error = "DUPLADOS";
                 } else if (!analise.error.contains("DUPLADOS")) {
@@ -109,6 +110,7 @@ public class AnalyserService {
 
             // ------------------- VERIFICA OS ITENS SEM CODIGOS -------------------
             if(itemSemCodigo.temItemSemCodigo(doc)){
+                analise.status = "ERRO";
                 if (analise.error.isEmpty()) {
                     analise.error = "SEM CODIGO";
                 } else if (!analise.error.contains("SEM CODIGO")) {
