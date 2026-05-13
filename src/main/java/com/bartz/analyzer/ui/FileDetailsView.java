@@ -25,6 +25,8 @@ public class FileDetailsView extends ScrollPane {
 
     private final VBox content;
     private VBox apiContent;
+    private VBox dynamicScreen;
+
     private FontIcon waitIcon;
     private Label placeholder;
 
@@ -40,7 +42,7 @@ public class FileDetailsView extends ScrollPane {
         HBox header = createHeader(row, onBack);
 
         // --- ABAS (VISÃO GERAL / COMPONENTES) ---
-        HBox tabs = createTabs();
+        HBox tabs = createTabs(row);
 
         // --- GRID DE CARDS ---
         GridPane grid = new GridPane();
@@ -135,19 +137,38 @@ public class FileDetailsView extends ScrollPane {
     }
 
     // --- MÉTODO DAS ABAS ---
-    private HBox createTabs() {
+    private HBox createTabs(FileTable.FileRow row) {
         HBox tabs = new HBox(20);
         tabs.setAlignment(Pos.CENTER_LEFT);
 
+        // ABA PRINCIPAL COM TODAS AS INFORMAÇÕES
         Button btnGeral = new Button("VISÃO GERAL");
         btnGeral.getStyleClass().addAll("btn-ghost", "tab-active"); // tab-active define a linha verde embaixo
         FontIcon iconGeral = new FontIcon(FontAwesomeSolid.EYE);
         iconGeral.setIconColor(Color.web("#27AE60"));
         btnGeral.setGraphic(iconGeral);
-        Button btnComp = new Button("COMPONENTES");
-        btnComp.getStyleClass().add("btn-ghost");
-        btnComp.setGraphic(new FontIcon(FontAwesomeSolid.CUBES));
-        tabs.getChildren().addAll(btnGeral, btnComp);
+
+        tabs.getChildren().addAll(btnGeral);
+
+        // ABAS DOS ERROS CONDICIONAIS
+        String erros = row.getErrors();
+
+        if (erros.contains("CORINGA")) {
+            tabs.getChildren().add(createTabButton("CORINGA", FontAwesomeSolid.MAGIC, false));
+        }
+        if (erros.contains("SEM ITEM FILHO")) {
+            tabs.getChildren().add(createTabButton("ITENS FILHOS", FontAwesomeSolid.SITEMAP, false));
+        }
+        if (erros.contains("MUXARABI")) {
+            tabs.getChildren().add(createTabButton("MUXARABI", FontAwesomeSolid.BORDER_ALL, false));
+        }
+        if (erros.contains("DUPLADOS")) {
+            tabs.getChildren().add(createTabButton("DUPLADOS", FontAwesomeSolid.COPY, false));
+        }
+        if (erros.contains("SEM CODIGO")) {
+            tabs.getChildren().add(createTabButton("SEM CÓDIGO", FontAwesomeSolid.BARCODE, false));
+        }
+
         return tabs;
     }
 
@@ -164,8 +185,19 @@ public class FileDetailsView extends ScrollPane {
             flow.getChildren().add(new Label("Nenhuma inconformidade encontrada."));
         } else {
             for (String err : errors.split(";")) {
-                Label badge = new Label(err.trim());
-                badge.getStyleClass().addAll("badge", "badge-erro");
+                String trimmed = err.trim();
+                Label badge = new Label(trimmed);
+                
+                // 1. Começamos com a classe base de badge
+                badge.getStyleClass().add("badge");
+                // 2. Lógica de cores:
+                if ("FERRAGENS".equals(trimmed) || "MUXARABI".equals(trimmed)) {
+                    // Aplica a cor amarela/laranja (mesma que usamos na tabela principal)
+                    badge.getStyleClass().add("badge-ferragens"); 
+                } else {
+                    // Mantém vermelho para os outros erros
+                    badge.getStyleClass().add("badge-erro");
+                }
                 flow.getChildren().add(badge);
             }
         }
@@ -279,6 +311,19 @@ public class FileDetailsView extends ScrollPane {
 
         return card;
     }
+
+    private Button createTabButton(String text, org.kordamp.ikonli.Ikon icon, boolean active) {
+        Button btn = new Button(text);
+        btn.getStyleClass().add("btn-ghost");
+        if (active) btn.getStyleClass().add("tab-active");
+        
+        FontIcon fontIcon = new FontIcon(icon);
+        if (active) fontIcon.setIconColor(javafx.scene.paint.Color.web("#27AE60"));
+        
+        btn.setGraphic(fontIcon);
+        return btn;
+    }
+
 
     // Método que busca os comentarios dos pedidos
     public void retornaComentario(String numeroPedido) {
