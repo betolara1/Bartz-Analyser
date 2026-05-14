@@ -6,6 +6,7 @@ import org.w3c.dom.Document;
 
 import com.bartz.analyzer.api.ErpAPI;
 import com.bartz.analyzer.api.PedidosAPI;
+import com.bartz.analyzer.service.ArquivoService;
 import com.bartz.analyzer.service.CoringaService;
 import com.bartz.analyzer.ui.FileTable.FileRow;
 
@@ -74,12 +75,14 @@ public class CoringaDetails {
             cbSigla.getSelectionModel().selectFirst();
         }
 
+        TextField tfNovoCodigo = new TextField();
+
         // Card Esquerdo: Busca de Produto (ERP)
-        VBox erpCard = createErpSearchCard(cbSigla, allSiglas);
+        VBox erpCard = createErpSearchCard(cbSigla, allSiglas, tfNovoCodigo);
         bottomGrid.add(erpCard, 0, 0);
 
         // Card Direito: Trocar Cor Coringa
-        VBox coringaCard = createCoringaSwapCard(cbSigla);
+        VBox coringaCard = createCoringaSwapCard(cbSigla, tfNovoCodigo, row, allSiglas);
         bottomGrid.add(coringaCard, 1, 0);
 
         root.getChildren().add(bottomGrid);
@@ -121,7 +124,7 @@ public class CoringaDetails {
         return card;
     }
 
-    private static VBox createErpSearchCard(ComboBox<String> cbSigla, List<String> allSiglas) {
+    private static VBox createErpSearchCard(ComboBox<String> cbSigla, List<String> allSiglas, TextField tfNovoCodigo) {
         VBox card = new VBox(15);
         card.getStyleClass().add("details-card");
         card.setStyle(card.getStyle() + "-fx-border-color: rgba(52, 152, 219, 0.2);");
@@ -228,7 +231,7 @@ public class CoringaDetails {
                 if (!csvResults.isEmpty()) {
                     resultsContainer.getChildren().add(createResultHeader());
                     for (String line : csvResults) {
-                        resultsContainer.getChildren().add(createResultRow(line));
+                        resultsContainer.getChildren().add(createResultRow(line, tfNovoCodigo));
                     }
                     resultsContainer.setVisible(true);
                 }
@@ -238,7 +241,7 @@ public class CoringaDetails {
             if (!"PAINEL".equals(selectedType)) {
                 // Se for "TODOS" ou um tipo que não seja PAINEL (como CHAPA, FITA, etc)
                 ErpAPI.buscaItensNoERP(selectedType, queryCode, queryDesc, resultsContainer, 
-                                      CoringaDetails::createResultRow, createResultHeader());
+                                      line -> createResultRow(line, tfNovoCodigo), createResultHeader());
             }
         });
 
@@ -263,7 +266,7 @@ public class CoringaDetails {
         return header;
     }
 
-    private static HBox createResultRow(String csvLine) {
+    private static HBox createResultRow(String csvLine, TextField tfNovoCodigo) {
         // Formato esperado: Código;Descrição;Espessura (ou similar)
         String[] parts = csvLine.split(";");
         String code = parts.length > 0 ? parts[0] : "???";
@@ -308,13 +311,18 @@ public class CoringaDetails {
             final javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
             content.putString(code);
             clipboard.setContent(content);
+            
+            // Cola automaticamente no campo tfNovoCodigo
+            if (tfNovoCodigo != null) {
+                tfNovoCodigo.setText(code);
+            }
         });
 
         row.getChildren().addAll(lblCode, lblDesc, spacer, btnCopy);
         return row;
     }
 
-    private static VBox createCoringaSwapCard(ComboBox<String> cbSigla) {
+    private static VBox createCoringaSwapCard(ComboBox<String> cbSigla, TextField tfNovoCodigo, FileRow row, List<String> allSiglas) {
         VBox card = new VBox(15);
         card.getStyleClass().add("details-card");
         card.setStyle(card.getStyle() + "-fx-border-color: rgba(243, 156, 18, 0.2);");
@@ -342,7 +350,6 @@ public class CoringaDetails {
 
         // Form Fields
         HBox form = new HBox(15);
-        TextField tfNovoCodigo = new TextField();
 
         VBox fieldSigla = createComboField("SIGLA ENCONTRADA", "", cbSigla);
         VBox fieldNovo = createField("NOVO CÓDIGO/VALOR", "Ex: 10.01.0000", tfNovoCodigo);
@@ -355,6 +362,76 @@ public class CoringaDetails {
         btnApply.setGraphic(new FontIcon(FontAwesomeSolid.SYNC));
         btnApply.setMaxWidth(Double.MAX_VALUE);
         btnApply.setStyle("-fx-background-color: #A36F15; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10; -fx-background-radius: 6;");
+
+        btnApply.setOnAction(e -> {
+            String sigla = cbSigla.getValue();
+            String novoCodigo = tfNovoCodigo.getText();
+
+            if (sigla == null || sigla.isEmpty() || novoCodigo == null || novoCodigo.trim().isEmpty()) {
+                Alert alertInfo = new Alert(Alert.AlertType.WARNING);
+                alertInfo.setTitle("Campos Vazios");
+                alertInfo.setHeaderText(null);
+                alertInfo.setContentText("Por favor, selecione uma sigla e informe o novo código.");
+                DialogPane dialogPane = alertInfo.getDialogPane();
+                dialogPane.setStyle("-fx-background-color: #1A1A1A;");
+                dialogPane.lookupAll(".label").forEach(node -> node.setStyle("-fx-text-fill: white;"));
+                alertInfo.showAndWait();
+                return;
+            }
+
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Confirmar Substituição");
+            alert.setHeaderText("Confirmar Substituição de Coringa");
+            alert.setContentText("Deseja substituir a sigla '" + sigla + "' pelo novo código/valor '" + novoCodigo + "'?");
+            
+            DialogPane dialogPane = alert.getDialogPane();
+            dialogPane.setStyle("-fx-background-color: #1A1A1A;");
+            dialogPane.lookupAll(".label").forEach(node -> node.setStyle("-fx-text-fill: white;"));
+            
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    if (row != null && row.getFullPath() != null) {
+                        File xmlFile = new File(row.getFullPath());
+                        if (xmlFile.exists()) {
+                            try {
+                                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                                Document doc = factory.newDocumentBuilder().parse(xmlFile);
+                                
+                                new CoringaService().substituirSiglaEspecifica(doc, sigla, novoCodigo);
+                                new ArquivoService().salvarArquivo(doc, xmlFile);
+                                
+                                // Remover a sigla das listas
+                                cbSigla.getItems().remove(sigla);
+                                if (allSiglas != null) {
+                                    allSiglas.remove(sigla);
+                                }
+                                
+                                // Limpar o campo de novo código
+                                tfNovoCodigo.clear();
+                                
+                                // Se não houver mais itens, talvez selecionar nada, mas o combo se vira.
+                                if (!cbSigla.getItems().isEmpty()) {
+                                    cbSigla.getSelectionModel().selectFirst();
+                                }
+                                
+                                // Mostra alerta de sucesso
+                                Alert success = new Alert(Alert.AlertType.INFORMATION);
+                                success.setTitle("Sucesso");
+                                success.setHeaderText(null);
+                                success.setContentText("A sigla '" + sigla + "' foi substituída por '" + novoCodigo + "' no arquivo!");
+                                DialogPane dp = success.getDialogPane();
+                                dp.setStyle("-fx-background-color: #1A1A1A;");
+                                dp.lookupAll(".label").forEach(n -> n.setStyle("-fx-text-fill: white;"));
+                                success.showAndWait();
+                                
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                        }
+                    }
+                }
+            });
+        });
 
         // Mappings (Bottom List)
         VBox mappings = new VBox(10);

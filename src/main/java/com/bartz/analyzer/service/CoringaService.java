@@ -2,6 +2,7 @@ package com.bartz.analyzer.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
@@ -107,6 +108,41 @@ public class CoringaService {
             if (!siglas.contains(upper)) {
                 siglas.add(upper);
             }
+        }
+    }
+
+    public void substituirSiglaEspecifica(Document doc, String siglaAtual, String novoCodigo) {
+        try {
+            XPath xPath = XPathFactory.newInstance().newXPath();
+
+            for (String coringa : corCoringa) {
+                String busca = "//*[contains(text(), '" + coringa + "') or @*[contains(., '" + coringa + "')]]";
+                NodeList lista = (NodeList) xPath.compile(busca).evaluate(doc, XPathConstants.NODESET);
+
+                for (int i = 0; i < lista.getLength(); i++) {
+                    Node node = lista.item(i);
+                    
+                    // Verificar no texto da tag
+                    String text = node.getTextContent();
+                    if (text != null && text.toUpperCase().contains(siglaAtual.toUpperCase())) {
+                        node.setTextContent(text.replaceAll("(?i)" + Pattern.quote(siglaAtual), novoCodigo));
+                    }
+                    
+                    // Verificar nos atributos
+                    NamedNodeMap attributes = node.getAttributes();
+                    if (attributes != null) {
+                        for (int j = 0; j < attributes.getLength(); j++) {
+                            Node attr = attributes.item(j);
+                            String attrValue = attr.getNodeValue();
+                            if (attrValue != null && attrValue.toUpperCase().contains(siglaAtual.toUpperCase())) {
+                                attr.setNodeValue(attrValue.replaceAll("(?i)" + Pattern.quote(siglaAtual), novoCodigo));
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
