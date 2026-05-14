@@ -16,12 +16,8 @@ import com.bartz.analyzer.ui.details.GeralDetails;
 public class FileDetailsView extends ScrollPane {
 
     private final VBox content;
-    private VBox apiContent;
     private VBox dynamicScreen; // Onde as telas vão aparecer
     private Button activeTab; // Para sabermos qual aba está selecionada
-
-    private FontIcon waitIcon;
-    private Label placeholder;
 
     public FileDetailsView(FileTable.FileRow row, Runnable onBack) {
         this.setFitToWidth(true);

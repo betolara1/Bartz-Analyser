@@ -137,12 +137,17 @@ public class CoringaDetails {
         VBox fieldType = createComboField("TIPO DE ITEM", "SELECIONE UM TIPO...", cbType);
         VBox fieldDesc = createField("DESCRIÇÃO (COR, ACABAMENTO, ESPESSURA)", "Ex: BRANCO SUPREMO 18MM", tfDesc);
 
+        // ---------------SELECT DO ERP------------------
         // --- LÓGICA 1: POPULAR COMBOBOX ---
-        cbType.setItems(FXCollections.observableArrayList("CHAPA", "FITA", "TAPAFURO", "PAINEL"));
+        cbType.setItems(FXCollections.observableArrayList("TODOS", "CHAPA", "FITA", "TAPAFURO", "PAINEL"));
+        cbType.getSelectionModel().select("TODOS"); // Define como padrão inicial
 
-        // --- LÓGICA 2: DESATIVAR CÓDIGO AO SELECIONAR TIPO ---
+        // --- LÓGICA 2: CONTROLAR CAMPO DE CÓDIGO ---
         cbType.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null) {
+            if ("TODOS".equals(newVal)) {
+                tfCode.setDisable(false);
+                tfCode.setOpacity(1.0); // Totalmente visível
+            } else {
                 tfCode.setDisable(true);
                 tfCode.setOpacity(0.5); // Feedback visual de desativado
             }
@@ -163,7 +168,7 @@ public class CoringaDetails {
             String selectedType = cbType.getValue();
             String query = tfDesc.getText();
 
-            if ("PAINEL".equals(selectedType) || "CHAPA".equals(selectedType)) {
+            if ("PAINEL".equals(selectedType)) {
                 List<String> results = ErpAPI.codigoPanel(query);
                 
                 // Limpa resultados anteriores
