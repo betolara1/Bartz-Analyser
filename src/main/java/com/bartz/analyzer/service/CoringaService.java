@@ -1,11 +1,16 @@
 package com.bartz.analyzer.service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 @Service
@@ -57,6 +62,51 @@ public class CoringaService {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public List<String> listarSiglas(Document doc) {
+        List<String> siglas = new ArrayList<>();
+        try {
+            XPath xPath = XPathFactory.newInstance().newXPath();
+
+            for (String coringa : corCoringa) {
+                String busca = "//*[contains(text(), '" + coringa + "') or @*[contains(., '" + coringa + "')]]";
+                NodeList lista = (NodeList) xPath.compile(busca).evaluate(doc, XPathConstants.NODESET);
+
+                for (int i = 0; i < lista.getLength(); i++) {
+                    Node node = lista.item(i);
+                    
+                    // Verificar no texto da tag
+                    String text = node.getTextContent();
+                    if (text != null && text.contains(coringa)) {
+                        adicionarSeValido(siglas, text);
+                    }
+                    
+                    // Verificar nos atributos
+                    NamedNodeMap attributes = node.getAttributes();
+                    if (attributes != null) {
+                        for (int j = 0; j < attributes.getLength(); j++) {
+                            String attrValue = attributes.item(j).getNodeValue();
+                            if (attrValue != null && attrValue.contains(coringa)) {
+                                adicionarSeValido(siglas, attrValue);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return siglas;
+    }
+
+    private void adicionarSeValido(List<String> siglas, String valor) {
+        String upper = valor.trim().toUpperCase();
+        if (upper.contains("CHAPA") || upper.contains("FITA") || upper.contains("TAPAFURO") || upper.contains("PAINEL")) {
+            if (!siglas.contains(upper)) {
+                siglas.add(upper);
+            }
         }
     }
 }

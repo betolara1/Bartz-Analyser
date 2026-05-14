@@ -2,9 +2,12 @@ package com.bartz.analyzer.ui.details;
 
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
+import org.w3c.dom.Document;
 
 import com.bartz.analyzer.api.ErpAPI;
 import com.bartz.analyzer.api.PedidosAPI;
+import com.bartz.analyzer.service.CoringaService;
+import com.bartz.analyzer.ui.FileTable.FileRow;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -13,7 +16,12 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.collections.FXCollections;
+
+import java.io.File;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import javax.xml.parsers.DocumentBuilderFactory;
 
 public class CoringaDetails {
 
@@ -21,7 +29,8 @@ public class CoringaDetails {
     private static FontIcon waitIcon;
     private static Label placeholder;
 
-    public static Node build(String filename) {
+    public static Node build(FileRow row) {
+        String filename = row != null ? row.getFilename() : null;
         VBox root = new VBox(20);
         root.setPadding(new Insets(10, 0, 0, 0));
 
@@ -44,12 +53,33 @@ public class CoringaDetails {
         col.setPercentWidth(50);
         bottomGrid.getColumnConstraints().addAll(col, col);
 
+        // --- PREPARAR DADOS DOS CORINGAS ---
+        List<String> allSiglas = new java.util.ArrayList<>();
+        if (row != null && row.getFullPath() != null) {
+            File xmlFile = new File(row.getFullPath());
+            if (xmlFile.exists()) {
+                try {
+                    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                    Document doc = factory.newDocumentBuilder().parse(xmlFile);
+                    allSiglas = new CoringaService().listarSiglas(doc);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+
+        ComboBox<String> cbSigla = new ComboBox<>();
+        if (!allSiglas.isEmpty()) {
+            cbSigla.setItems(FXCollections.observableArrayList(allSiglas));
+            cbSigla.getSelectionModel().selectFirst();
+        }
+
         // Card Esquerdo: Busca de Produto (ERP)
-        VBox erpCard = createErpSearchCard();
+        VBox erpCard = createErpSearchCard(cbSigla, allSiglas);
         bottomGrid.add(erpCard, 0, 0);
 
         // Card Direito: Trocar Cor Coringa
-        VBox coringaCard = createCoringaSwapCard();
+        VBox coringaCard = createCoringaSwapCard(cbSigla);
         bottomGrid.add(coringaCard, 1, 0);
 
         root.getChildren().add(bottomGrid);
@@ -91,7 +121,7 @@ public class CoringaDetails {
         return card;
     }
 
-    private static VBox createErpSearchCard() {
+    private static VBox createErpSearchCard(ComboBox<String> cbSigla, List<String> allSiglas) {
         VBox card = new VBox(15);
         card.getStyleClass().add("details-card");
         card.setStyle(card.getStyle() + "-fx-border-color: rgba(52, 152, 219, 0.2);");
@@ -142,7 +172,7 @@ public class CoringaDetails {
         cbType.setItems(FXCollections.observableArrayList("TODOS", "CHAPA", "FITA", "TAPAFURO", "PAINEL"));
         cbType.getSelectionModel().select("TODOS"); // Define como padrão inicial
 
-        // --- LÓGICA 2: CONTROLAR CAMPO DE CÓDIGO ---
+        // --- LÓGICA 2: CONTROLAR CAMPO DE CÓDIGO E FILTRAR SIGLAS ---
         cbType.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if ("TODOS".equals(newVal)) {
                 tfCode.setDisable(false);
@@ -151,6 +181,21 @@ public class CoringaDetails {
                 tfCode.clear(); // ZERA O CAMPO AUTOMATICAMENTE
                 tfCode.setDisable(true);
                 tfCode.setOpacity(0.5); // Feedback visual de desativado
+            }
+
+            // NOVA LÓGICA: Filtrar cbSigla
+            if (allSiglas != null && !allSiglas.isEmpty()) {
+                if ("TODOS".equals(newVal)) {
+                    cbSigla.setItems(FXCollections.observableArrayList(allSiglas));
+                } else {
+                    List<String> filtered = allSiglas.stream()
+                        .filter(s -> s.contains(newVal))
+                        .collect(Collectors.toList());
+                    cbSigla.setItems(FXCollections.observableArrayList(filtered));
+                }
+                if (!cbSigla.getItems().isEmpty()) {
+                    cbSigla.getSelectionModel().selectFirst();
+                }
             }
         });
 
@@ -269,7 +314,7 @@ public class CoringaDetails {
         return row;
     }
 
-    private static VBox createCoringaSwapCard() {
+    private static VBox createCoringaSwapCard(ComboBox<String> cbSigla) {
         VBox card = new VBox(15);
         card.getStyleClass().add("details-card");
         card.setStyle(card.getStyle() + "-fx-border-color: rgba(243, 156, 18, 0.2);");
@@ -297,7 +342,6 @@ public class CoringaDetails {
 
         // Form Fields
         HBox form = new HBox(15);
-        ComboBox<String> cbSigla = new ComboBox<>();
         TextField tfNovoCodigo = new TextField();
 
         VBox fieldSigla = createComboField("SIGLA ENCONTRADA", "", cbSigla);

@@ -89,7 +89,7 @@ public class FileDetailsView extends ScrollPane {
 
         if (erros.contains("CORINGA")) {
             Button btnCoringa = createTabButton("CORINGA", FontAwesomeSolid.MAGIC, false);
-            btnCoringa.setOnAction(e -> switchTab(btnCoringa, CoringaDetails.build(row.getFilename())));
+            btnCoringa.setOnAction(e -> switchTab(btnCoringa, CoringaDetails.build(row)));
             tabs.getChildren().add(btnCoringa);
         }
         if (erros.contains("SEM ITEM FILHO")) {
