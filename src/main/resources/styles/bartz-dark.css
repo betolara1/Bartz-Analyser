@@ -421,3 +421,14 @@
     -fx-font-size: 10px;
     -fx-text-fill: #27AE60;
 }
+
+/* ----- ABAS DE DETALHES ----- */
+.tab-active {
+    -fx-text-fill: #FFFFFF !important;
+    -fx-border-color: transparent transparent #27AE60 transparent;
+    -fx-border-width: 0 0 3 0;
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 8 12 5 12;
+}
+

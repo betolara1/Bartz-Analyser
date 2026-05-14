@@ -73,7 +73,9 @@ public class FileDetailsView extends ScrollPane {
 
         // ABA PRINCIPAL COM TODAS AS INFORMAÇÕES
         Button btnGeral = new Button("VISÃO GERAL");
-        btnGeral.getStyleClass().addAll("btn-ghost", "tab-active"); // tab-active define a linha verde embaixo
+        btnGeral.getStyleClass().addAll("btn-ghost", "tab-active");
+        activeTab = btnGeral; // <--- AGORA O SISTEMA SABE QUEM ESTÁ ATIVO
+        
         FontIcon iconGeral = new FontIcon(FontAwesomeSolid.EYE);
         iconGeral.setIconColor(Color.web("#27AE60"));
         btnGeral.setGraphic(iconGeral);
@@ -121,9 +123,9 @@ public class FileDetailsView extends ScrollPane {
     private void switchTab(Button button, Node view){
         if(activeTab != null){
             activeTab.getStyleClass().remove("tab-active");
-
+            activeTab.setStyle(""); // Limpa estilos inline se houver
             if(activeTab.getGraphic() instanceof FontIcon icon){
-                icon.setIconColor(javafx.scene.paint.Color.web("#A7A7A7"));
+                icon.setIconColor(Color.web("#A7A7A7"));
             }
         }
 
@@ -131,8 +133,9 @@ public class FileDetailsView extends ScrollPane {
         activeTab = button;
         activeTab.getStyleClass().add("tab-active");
         if (activeTab.getGraphic() instanceof FontIcon icon) {
-            icon.setIconColor(javafx.scene.paint.Color.web("#27AE60"));
+            icon.setIconColor(Color.web("#27AE60"));
         }
+        
         // 3. Troca a tela no "palco"
         dynamicScreen.getChildren().clear();
         dynamicScreen.getChildren().add(view);

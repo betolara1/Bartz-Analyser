@@ -148,6 +148,7 @@ public class CoringaDetails {
                 tfCode.setDisable(false);
                 tfCode.setOpacity(1.0); // Totalmente visível
             } else {
+                tfCode.clear(); // ZERA O CAMPO AUTOMATICAMENTE
                 tfCode.setDisable(true);
                 tfCode.setOpacity(0.5); // Feedback visual de desativado
             }
@@ -166,28 +167,33 @@ public class CoringaDetails {
         // --- LÓGICA 3: AÇÃO DE BUSCA ---
         btnSearch.setOnAction(e -> {
             String selectedType = cbType.getValue();
-            String query = tfDesc.getText();
+            String queryDesc = tfDesc.getText();
+            String queryCode = tfCode.getText();
 
-            if ("PAINEL".equals(selectedType)) {
-                List<String> results = ErpAPI.codigoPanel(query);
+            // Limpa resultados anteriores e esconde
+            resultsContainer.getChildren().clear();
+            resultsContainer.setVisible(false);
+
+            // 1. BUSCA NO CSV (Síncrona - Painéis)
+            if ("PAINEL".equals(selectedType) || "TODOS".equals(selectedType)) {
+                // PRIORIDADE: Se tiver código, busca por ele. Se não, busca por descrição.
+                String termoBuscaCSV = (queryCode != null && !queryCode.trim().isEmpty()) ? queryCode : queryDesc;
                 
-                // Limpa resultados anteriores
-                resultsContainer.getChildren().clear();
-                
-                if (results.isEmpty()) {
-                    resultsContainer.setVisible(false);
-                } else {
-                    // Adiciona o Cabeçalho
+                List<String> csvResults = ErpAPI.codigoPanel(termoBuscaCSV);
+                if (!csvResults.isEmpty()) {
                     resultsContainer.getChildren().add(createResultHeader());
-                    
-                    // Adiciona cada linha de resultado
-                    for (String line : results) {
+                    for (String line : csvResults) {
                         resultsContainer.getChildren().add(createResultRow(line));
                     }
                     resultsContainer.setVisible(true);
                 }
-            } else {
-                resultsContainer.setVisible(false);
+            }
+
+            // 2. BUSCA NO ERP (Assíncrona - Itens)
+            if (!"PAINEL".equals(selectedType)) {
+                // Se for "TODOS" ou um tipo que não seja PAINEL (como CHAPA, FITA, etc)
+                ErpAPI.buscaItensNoERP(selectedType, queryCode, queryDesc, resultsContainer, 
+                                      CoringaDetails::createResultRow, createResultHeader());
             }
         });
 

@@ -4,108 +4,109 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List; // Importante!
-import java.util.stream.Collectors; // Importante!
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javafx.application.Platform;
-import javafx.geometry.Pos;
 import javafx.scene.layout.*;
+import javafx.scene.Node;
 import javafx.scene.control.*;
-import org.kordamp.ikonli.javafx.FontIcon;
 
 public class ErpAPI {
+    // BUSCA INTEGRADA NO ERP (Para a lista de resultados)
+    public static void buscaItensNoERP(String tipo, String codigo, String descricao, VBox container, java.util.function.Function<String, HBox> rowFactory, Node header) {
+        String url;
+        final String prefixo = "CHAPA".equals(tipo) ? "10.01." : 
+                               "FITA".equals(tipo) ? "10.02." : 
+                               "TAPAFURO".equals(tipo) ? "10.15." : "";
 
-    
-    
+        try {
+            String queryCode = (codigo != null && !codigo.trim().isEmpty()) ? codigo.trim().toUpperCase() : "";
+            String queryDesc = (descricao != null) ? descricao.trim().toUpperCase() : "";
+            String[] searchTerms = queryDesc.split("\\s+");
 
-    // BUSCA EM API DE CORES (Se type === 'CORINGA')
-    String corCod = "http://192.168.1.10:8085/cores/search?codigo=";
-    String corDesc = "http://192.168.1.10:8085/cores/search?descricao=";
-    String cor = "http://192.168.1.10:8085/cores";
+            if (!queryCode.isEmpty()) {
+                // Busca por CÓDIGO
+                url = "http://192.168.1.10:8081/api/item/search-code?q=" + URLEncoder.encode(queryCode, StandardCharsets.UTF_8);
+            } else if (!queryDesc.isEmpty()) {
+                // Busca por DESCRIÇÃO (Usa o termo mais longo como no código antigo)
+                String longestTerm = "";
+                for(String s : searchTerms) if(s.length() > longestTerm.length()) longestTerm = s;
+                url = "http://192.168.1.10:8081/api/item/search-desc?q=" + URLEncoder.encode(longestTerm, StandardCharsets.UTF_8);
+            } else {
+                url = "http://192.168.1.10:8081/api/item";
+            }
+            
+            System.out.println("Buscando no ERP: " + url);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
 
-    // 2. BUSCA PELO ITEM NO ERP (CODIGO E/OU DESCRIÇÃO)
-    String itemCod = "http://192.168.1.10:8085/itens/search?codigo=";
-    String itemDesc = "http://192.168.1.10:8085/itens/search?descricao=";
-
-
-    public static void retornaDescricao(String codigo, VBox apiContent, FontIcon waitIcon, Label placeholder){
-        String url = "http://192.168.1.10:8085/itens/search?codigo=" + codigo;
         HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("X-API-KEY", "bartznewmoveisapi")
+                .build();
+
         client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(json -> {
-            try{
+            try {
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode root = mapper.readTree(json);
 
                 Platform.runLater(() -> {
-                    if (apiContent != null) {
-                        apiContent.getChildren().clear();
-                        apiContent.setAlignment(Pos.CENTER_LEFT);
-                        apiContent.setSpacing(15);
-                    }
+                    if (root.isArray() && root.size() > 0) {
+                        String finalDesc = (descricao != null) ? descricao.toUpperCase() : "";
+                        String[] terms = finalDesc.split("\\s+");
 
-                    if (waitIcon != null) {
-                        waitIcon.setVisible(false);
-                        waitIcon.setManaged(false);
-                    }
+                        for (JsonNode item : root) {
+                            String itemCode = item.path("codeItem").asText().toUpperCase();
+                            String itemDesc = item.path("description").asText().toUpperCase();
+                            
+                            // 1. FILTRO DE FORMATO (Exatamente 2 pontos: xx.xx.xxxx)
+                            long dotCount = itemCode.chars().filter(ch -> ch == '.').count();
+                            if (dotCount != 2) continue;
 
-                    if (!root.isArray() || root.size() == 0) {
-                        Label empty = new Label("PEDIDO SEM COMENTÁRIOS NO SERVIDOR.");
-                        empty.setStyle("-fx-text-fill: #555555; -fx-font-size: 11px; -fx-font-weight: bold;");
-                        if (apiContent != null) apiContent.getChildren().add(empty);
-                        return;
-                    }
+                            // 2. FILTRO DE PREFIXO (Se selecionou categoria)
+                            if (!prefixo.isEmpty() && !itemCode.startsWith(prefixo)) continue;
+                            
+                            // 3. FILTRO DE TERMOS (Todos os termos devem bater)
+                            boolean matchAll = true;
+                            for(String t : terms) {
+                                if(t.isEmpty()) continue;
+                                if(!itemDesc.contains(t) && !itemCode.contains(t)) {
+                                    matchAll = false;
+                                    break;
+                                }
+                            }
+                            if (!matchAll && !finalDesc.isEmpty()) continue;
 
-                    for (JsonNode item : root) {
-                        String titulo = item.path("txt_titulo").isMissingNode() || item.path("txt_titulo").isNull() 
-                                        ? "" : item.path("txt_titulo").asText();
-                        String comentario = item.path("txt_comentario").isMissingNode() || item.path("txt_comentario").isNull() 
-                                            ? "" : item.path("txt_comentario").asText();
-
-                        if (!comentario.isEmpty() && !comentario.equalsIgnoreCase("null")) {
-                            VBox itemBox = new VBox(4);
-                            String tituloFormatado = (titulo.isEmpty() || titulo.equalsIgnoreCase("null")) 
-                                                    ? "COMENTÁRIO" : titulo.toUpperCase();
-
-                            Label lblTitulo = new Label(tituloFormatado);
-                            lblTitulo.setStyle("-fx-text-fill: #3498DB; -fx-font-size: 10px; -fx-font-weight: bold; -fx-letter-spacing: 1px;");
-
-                            Label lblComentario = new Label(comentario);
-                            lblComentario.setWrapText(true);
-                            lblComentario.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
-
-                            itemBox.getChildren().addAll(lblTitulo, lblComentario);
-                            if (apiContent != null) apiContent.getChildren().add(itemBox);
+                            if (container.getChildren().isEmpty()) container.getChildren().add(header);
+                            container.getChildren().add(rowFactory.apply(itemCode + ";" + itemDesc));
                         }
                     }
-                });
-            } 
-            catch (Exception e) {
-                Platform.runLater(() -> {
-                    if (waitIcon != null) {
-                        waitIcon.setVisible(false);
-                        waitIcon.setManaged(false);
+                    
+                    // Feedback final
+                    if (container.getChildren().isEmpty()) {
+                        Label lbl = new Label("NENHUM ITEM ENCONTRADO PARA ESTA BUSCA.");
+                        lbl.setStyle("-fx-text-fill: #E74C3C; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 20;");
+                        container.getChildren().add(lbl);
                     }
-                    if (apiContent != null) {
-                        apiContent.getChildren().clear();
-                        Label err = new Label("INFORMAÇÕES DO PEDIDO INDISPONÍVEIS.");
-                        err.setStyle("-fx-text-fill: #E74C3C; -fx-font-size: 11px; -fx-font-weight: bold;");
-                        apiContent.getChildren().add(err);
-                    }
+                    container.setVisible(true);
                 });
-            }
+            } catch (Exception e) { e.printStackTrace(); }
         });
     }
-
-
 
     // BUSCA NO CVS OS PAINEIS
     public static List<String> codigoPanel(String descricao){
