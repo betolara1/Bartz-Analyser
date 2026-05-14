@@ -11,11 +11,6 @@ import org.w3c.dom.NodeList;
 @Service
 public class FerragensService {
 
-    private ArquivoService arquivo;
-    public FerragensService(ArquivoService arquivo){
-        this.arquivo = arquivo;
-    }
-
     public boolean temFerragem(Document doc){
         try{
             NodeList maquinas = doc.getElementsByTagName("MAQUINA");

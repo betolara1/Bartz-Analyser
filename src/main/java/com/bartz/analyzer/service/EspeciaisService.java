@@ -7,13 +7,7 @@ import org.w3c.dom.NodeList;
 
 @Service
 public class EspeciaisService {
-
-    private final ArquivoService arquivo;
-
-    public EspeciaisService(ArquivoService arquivo){
-        this.arquivo = arquivo;
-    }
-
+    
     public boolean temEspeciais(Document doc){
         try{
             NodeList especias = doc.getElementsByTagName("ITEM");

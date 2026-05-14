@@ -7,11 +7,6 @@ import org.w3c.dom.NodeList;
 
 @Service
 public class ImportKeyService {
-    private final ArquivoService arquivo;
-
-    public ImportKeyService(ArquivoService arquivo){
-        this.arquivo = arquivo;
-    }
 
     public String getImportKey(Document doc) {
         NodeList importKey = doc.getElementsByTagName("IMPORTKEY");

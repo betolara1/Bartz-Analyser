@@ -8,11 +8,6 @@ import org.w3c.dom.NodeList;
 
 @Service
 public class ItemVazioService {
-    private ArquivoService arquivo;
-
-    public ItemVazioService(ArquivoService arquivo){
-        this.arquivo = arquivo;
-    }
 
     public boolean temItemVazio(Document doc){
         try {

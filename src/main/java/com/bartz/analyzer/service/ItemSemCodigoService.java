@@ -7,12 +7,7 @@ import org.w3c.dom.NodeList;
 
 @Service
 public class ItemSemCodigoService {
-    private final ArquivoService arquivo;
-
-    public ItemSemCodigoService(ArquivoService arquivo){
-        this.arquivo = arquivo;
-    }
-
+    
     public boolean temItemSemCodigo(Document doc){
         try{
             NodeList todosItens = doc.getElementsByTagName("ITEM");

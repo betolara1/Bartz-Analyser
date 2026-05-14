@@ -11,8 +11,7 @@ import org.w3c.dom.NodeList;
 @Service
 public class CoringaService {
 
-    private static final String[] corCoringa = { "_CG1", "_CG2", "CG1", "CG2", "CORINGA1", "CORINGA2", "_CG1_",
-            "_CG2_" };
+    private static final String[] corCoringa = { "_CG1", "_CG2", "CG1", "CG2", "CORINGA1", "CORINGA2", "_CG1_", "_CG2_" };
 
     public boolean temCoringa(Document doc) {
         try {

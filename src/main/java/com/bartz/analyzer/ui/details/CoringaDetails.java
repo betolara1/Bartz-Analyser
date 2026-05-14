@@ -3,6 +3,7 @@ package com.bartz.analyzer.ui.details;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import com.bartz.analyzer.api.ErpAPI;
 import com.bartz.analyzer.api.PedidosAPI;
 
 import javafx.geometry.Insets;
@@ -11,6 +12,8 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.collections.FXCollections;
+import java.util.List;
 
 public class CoringaDetails {
 
@@ -50,6 +53,8 @@ public class CoringaDetails {
         bottomGrid.add(coringaCard, 1, 0);
 
         root.getChildren().add(bottomGrid);
+
+        ErpAPI.codigoPanel("Azul");
 
         return root;
     }
@@ -109,14 +114,39 @@ public class CoringaDetails {
         VBox infoBox = new VBox(infoText);
         infoBox.setStyle("-fx-background-color: #080808; -fx-padding: 15; -fx-background-radius: 6;");
 
+        // --- REFERÊNCIAS DOS CAMPOS ---
+        TextField tfCode = new TextField();
+        ComboBox<String> cbType = new ComboBox<>();
+        TextField tfDesc = new TextField();
+        
+        // --- NOVO PAINEL DE RESULTADOS (ESTILO PREMIUM) ---
+        VBox resultsContainer = new VBox(0); // Espaçamento 0 pois usaremos bordas/padding nas linhas
+        resultsContainer.setStyle("-fx-background-color: #0D0D0D; -fx-background-radius: 8; -fx-border-color: #1A1A1A;");
+        resultsContainer.setMaxWidth(Double.MAX_VALUE); // Garante que ocupe toda a largura
+        
+        // Isso faz o painel sumir e não ocupar espaço quando não houver resultados
+        resultsContainer.setVisible(false);
+        resultsContainer.managedProperty().bind(resultsContainer.visibleProperty());
+
         // Form Fields
         GridPane form = new GridPane();
         form.setHgap(15);
         form.setVgap(15);
 
-        VBox fieldCode = createField("CÓDIGO DO PRODUTO", "Ex: 10.01.0001");
-        VBox fieldType = createComboField("TIPO DE ITEM", "TODOS OS TIPOS");
-        VBox fieldDesc = createField("DESCRIÇÃO (COR, ACABAMENTO, ESPESSURA)", "Ex: BRANCO SUPREMO 18MM");
+        VBox fieldCode = createField("CÓDIGO DO PRODUTO", "Ex: 10.01.0001", tfCode);
+        VBox fieldType = createComboField("TIPO DE ITEM", "SELECIONE UM TIPO...", cbType);
+        VBox fieldDesc = createField("DESCRIÇÃO (COR, ACABAMENTO, ESPESSURA)", "Ex: BRANCO SUPREMO 18MM", tfDesc);
+
+        // --- LÓGICA 1: POPULAR COMBOBOX ---
+        cbType.setItems(FXCollections.observableArrayList("CHAPA", "FITA", "TAPAFURO", "PAINEL"));
+
+        // --- LÓGICA 2: DESATIVAR CÓDIGO AO SELECIONAR TIPO ---
+        cbType.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                tfCode.setDisable(true);
+                tfCode.setOpacity(0.5); // Feedback visual de desativado
+            }
+        });
 
         form.add(fieldCode, 0, 0);
         form.add(fieldType, 1, 0);
@@ -128,8 +158,104 @@ public class CoringaDetails {
         btnSearch.setMaxWidth(Double.MAX_VALUE);
         btnSearch.setStyle("-fx-background-color: #1A428A; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10; -fx-background-radius: 6;");
 
-        card.getChildren().addAll(header, infoBox, form, btnSearch);
+        // --- LÓGICA 3: AÇÃO DE BUSCA ---
+        btnSearch.setOnAction(e -> {
+            String selectedType = cbType.getValue();
+            String query = tfDesc.getText();
+
+            if ("PAINEL".equals(selectedType) || "CHAPA".equals(selectedType)) {
+                List<String> results = ErpAPI.codigoPanel(query);
+                
+                // Limpa resultados anteriores
+                resultsContainer.getChildren().clear();
+                
+                if (results.isEmpty()) {
+                    resultsContainer.setVisible(false);
+                } else {
+                    // Adiciona o Cabeçalho
+                    resultsContainer.getChildren().add(createResultHeader());
+                    
+                    // Adiciona cada linha de resultado
+                    for (String line : results) {
+                        resultsContainer.getChildren().add(createResultRow(line));
+                    }
+                    resultsContainer.setVisible(true);
+                }
+            } else {
+                resultsContainer.setVisible(false);
+            }
+        });
+
+        card.getChildren().addAll(header, infoBox, form, btnSearch, resultsContainer);
         return card;
+    }
+
+    private static HBox createResultHeader() {
+        HBox header = new HBox(20);
+        header.setPadding(new Insets(15, 20, 15, 20));
+        header.setStyle("-fx-border-color: transparent transparent #1A1A1A transparent;");
+        
+        Label lblCod = new Label("COD");
+        lblCod.setMinWidth(50);
+        Label lblDesc = new Label("DESCRIÇÃO DETALHADA");
+        
+        String style = "-fx-text-fill: #666666; -fx-font-size: 11px; -fx-font-weight: bold; -fx-letter-spacing: 1px;";
+        lblCod.setStyle(style);
+        lblDesc.setStyle(style);
+        
+        header.getChildren().addAll(lblCod, lblDesc);
+        return header;
+    }
+
+    private static HBox createResultRow(String csvLine) {
+        // Formato esperado: Código;Descrição;Espessura (ou similar)
+        String[] parts = csvLine.split(";");
+        String code = parts.length > 0 ? parts[0] : "???";
+        String desc = parts.length > 1 ? parts[1] : csvLine;
+        if (parts.length > 2) desc += " - " + parts[2]; // Adiciona espessura se houver
+
+        HBox row = new HBox(15); // Reduzi um pouco o gap para dar mais espaço à descrição
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setPadding(new Insets(12, 20, 12, 20));
+        row.getStyleClass().add("result-row");
+        row.setStyle("-fx-border-color: transparent transparent #1A1A1A transparent;");
+
+        Label lblCode = new Label(code);
+        lblCode.setMinWidth(60); // Aumentei um pouco o mínimo do código
+        lblCode.setStyle("-fx-text-fill: #3498DB; -fx-font-weight: bold;");
+
+        Label lblDesc = new Label(desc.toUpperCase());
+        lblDesc.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
+        lblDesc.setWrapText(true);
+
+        // --- O SEGREDO PARA FICAR NA DIREITA: UM SPACER ---
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS); // Este espaço vazio vai crescer e empurrar o botão
+
+        Button btnCopy = new Button("COPIAR");
+        btnCopy.setCursor(javafx.scene.Cursor.HAND); // Mostra a "mãozinha" ao passar o mouse
+        btnCopy.setMinWidth(Button.USE_PREF_SIZE);
+        
+        // Estilo Inicial
+        String styleNormal = "-fx-background-color: transparent; -fx-border-color: #1A428A; -fx-border-radius: 4; -fx-text-fill: #3498DB; -fx-font-size: 9px; -fx-font-weight: bold; -fx-padding: 4 12;";
+        String styleHover = "-fx-background-color: #1A428A; -fx-border-color: #1A428A; -fx-border-radius: 4; -fx-text-fill: white; -fx-font-size: 9px; -fx-font-weight: bold; -fx-padding: 4 12;";
+        
+        btnCopy.setStyle(styleNormal);
+        
+        // Efeito de passar o mouse (Parecer um botão de verdade)
+        btnCopy.setOnMouseEntered(e -> btnCopy.setStyle(styleHover));
+        btnCopy.setOnMouseExited(e -> btnCopy.setStyle(styleNormal));
+        
+        // Lógica de copiar
+        btnCopy.setOnAction(e -> {
+            final javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
+            final javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+            content.putString(code);
+            clipboard.setContent(content);
+        });
+
+        row.getChildren().addAll(lblCode, lblDesc, spacer, btnCopy);
+        return row;
     }
 
     private static VBox createCoringaSwapCard() {
@@ -160,8 +286,11 @@ public class CoringaDetails {
 
         // Form Fields
         HBox form = new HBox(15);
-        VBox fieldSigla = createComboField("SIGLA ENCONTRADA", "");
-        VBox fieldNovo = createField("NOVO CÓDIGO/VALOR", "Ex: 10.01.0000");
+        ComboBox<String> cbSigla = new ComboBox<>();
+        TextField tfNovoCodigo = new TextField();
+
+        VBox fieldSigla = createComboField("SIGLA ENCONTRADA", "", cbSigla);
+        VBox fieldNovo = createField("NOVO CÓDIGO/VALOR", "Ex: 10.01.0000", tfNovoCodigo);
         HBox.setHgrow(fieldSigla, Priority.ALWAYS);
         HBox.setHgrow(fieldNovo, Priority.ALWAYS);
         form.getChildren().addAll(fieldSigla, fieldNovo);
@@ -219,22 +348,20 @@ public class CoringaDetails {
         return box;
     }
 
-    private static VBox createField(String label, String prompt) {
+    private static VBox createField(String label, String prompt, TextField tf) {
         VBox box = new VBox(5);
         Label lbl = new Label(label);
         lbl.setStyle("-fx-text-fill: #A7A7A7; -fx-font-size: 10px; -fx-font-weight: bold;");
-        TextField tf = new TextField();
         tf.setPromptText(prompt);
         tf.setStyle("-fx-background-color: #0D0D0D; -fx-border-color: #1A1A1A; -fx-border-radius: 4; -fx-text-fill: white; -fx-padding: 8;");
         box.getChildren().addAll(lbl, tf);
         return box;
     }
 
-    private static VBox createComboField(String label, String value) {
+    private static VBox createComboField(String label, String value, ComboBox<String> cb) {
         VBox box = new VBox(5);
         Label lbl = new Label(label);
         lbl.setStyle("-fx-text-fill: #A7A7A7; -fx-font-size: 10px; -fx-font-weight: bold;");
-        ComboBox<String> cb = new ComboBox<>();
         cb.setPromptText(value);
         cb.setMaxWidth(Double.MAX_VALUE);
         cb.setStyle("-fx-background-color: #0D0D0D; -fx-border-color: #1A1A1A; -fx-border-radius: 4; -fx-text-fill: white;");

@@ -7,11 +7,6 @@ import org.w3c.dom.NodeList;
 
 @Service
 public class DupladosService {
-    private final ArquivoService arquivo;
-
-    public DupladosService(ArquivoService arquivo){
-        this.arquivo = arquivo;
-    }
 
     public boolean temDuplados(Document doc){
         try{

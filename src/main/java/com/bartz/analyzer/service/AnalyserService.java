@@ -18,11 +18,12 @@ public class AnalyserService {
     private final EspeciaisService especiais;
     private final DupladosService duplados;
     private final ItemSemCodigoService itemSemCodigo;
-    private String error;
+    //private String error;
 
-    public AnalyserService( CoringaService coringa, ArquivoService arquivo, AutofixService autofix, ItemVazioService itemVazio, 
-                            FerragensService ferragens, MuxarabiService muxarabi, ImportKeyService importKey, EspeciaisService especiais,
-                            DupladosService duplados, ItemSemCodigoService itemSemCodigo){
+    public AnalyserService( CoringaService coringa, ArquivoService arquivo, AutofixService autofix, ItemVazioService itemVazio,
+                            FerragensService ferragens, MuxarabiService muxarabi, ImportKeyService importKey,
+                            EspeciaisService especiais, DupladosService duplados, ItemSemCodigoService itemSemCodigo) 
+    {
         this.coringa = coringa;
         this.arquivo = arquivo;
         this.autofix = autofix;
@@ -35,7 +36,7 @@ public class AnalyserService {
         this.itemSemCodigo = itemSemCodigo;
     }
 
-    public class AnaliseTags{
+    public class AnaliseTags {
         public String status = "OK";
         public String error = "";
         public String autofix = "";
@@ -43,14 +44,14 @@ public class AnalyserService {
         public String erpKey;
     }
 
-    public AnaliseTags processarTags(File file){
+    public AnaliseTags processarTags(File file) {
         AnaliseTags analise = new AnaliseTags();
 
-        try{
+        try {
             Document doc = arquivo.carregarArquivo(file);
 
             // ------------------- VERIFICA CORINGA -------------------
-            if(coringa.temCoringa(doc)){
+            if (coringa.temCoringa(doc)) {
                 analise.status = "ERRO";
                 analise.error = "CORINGA";
             }
@@ -66,14 +67,13 @@ public class AnalyserService {
                 analise.status = "ERRO";
                 if (analise.error.isEmpty()) {
                     analise.error = "SEM ITEM FILHO";
-                } 
-                else if (!analise.error.contains("SEM ITEM FILHO")) {
+                } else if (!analise.error.contains("SEM ITEM FILHO")) {
                     analise.error += "; SEM ITEM FILHO";
                 }
             }
 
             // ------------------- VERIFICA MÁQUINAS (FERRAGENS) -------------------
-            if(ferragens.temFerragem(doc)){
+            if (ferragens.temFerragem(doc)) {
                 if (analise.tags.isEmpty()) {
                     analise.tags = "FERRAGENS";
                 } else if (!analise.tags.contains("FERRAGENS")) {
@@ -82,7 +82,7 @@ public class AnalyserService {
             }
 
             // ------------------- VERIFICA OS MUXARABIS -------------------
-            if(muxarabi.temMuxarabi(doc)) {
+            if (muxarabi.temMuxarabi(doc)) {
                 if (analise.tags.isEmpty()) {
                     analise.tags = "MUXARABI";
                 } else if (!analise.tags.contains("MUXARABI")) {
@@ -93,13 +93,11 @@ public class AnalyserService {
             // ------------------- VERIFICA O IMPORTKEY -------------------
             analise.erpKey = importKey.getImportKey(doc);
 
-
             // ------------------- VERIFICA OS ITENS ESPECIAIS -------------------
             especiais.temEspeciais(doc);
 
-
             // ------------------- VERIFICA OS ITENS DUPLADOS -------------------
-            if(duplados.temDuplados(doc)){
+            if (duplados.temDuplados(doc)) {
                 analise.status = "ERRO";
                 if (analise.error.isEmpty()) {
                     analise.error = "DUPLADOS";
@@ -109,7 +107,7 @@ public class AnalyserService {
             }
 
             // ------------------- VERIFICA OS ITENS SEM CODIGOS -------------------
-            if(itemSemCodigo.temItemSemCodigo(doc)){
+            if (itemSemCodigo.temItemSemCodigo(doc)) {
                 analise.status = "ERRO";
                 if (analise.error.isEmpty()) {
                     analise.error = "SEM CODIGO";
@@ -118,8 +116,7 @@ public class AnalyserService {
                 }
             }
 
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             analise.status = "FALHA";
         }
         return analise;

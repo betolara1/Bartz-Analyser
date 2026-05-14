@@ -7,11 +7,7 @@ import org.w3c.dom.NodeList;
 
 @Service
 public class MuxarabiService {
-    private final ArquivoService arquivo;
-    public MuxarabiService(ArquivoService arquivo){
-        this.arquivo = arquivo;
-    }
-
+    
     public boolean temMuxarabi(Document doc){
         try{
             NodeList muxarabi = doc.getElementsByTagName("ITEM");
