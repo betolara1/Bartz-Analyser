@@ -66,6 +66,29 @@ public class FileDetailsView extends ScrollPane {
 
 
 
+    public void finalizeCoringaFlow(FileTable.FileRow row) {
+        // Remove a tag de erro para que o botão suma na próxima atualização
+        String erros = row.getErrors();
+        if (erros.contains("CORINGA")) {
+            // Remove "CORINGA" e limpa vírgulas extras
+            String novosErros = erros.replace("CORINGA", "")
+                                     .replaceAll(",\\s*,", ",")
+                                     .replaceAll("^\\s*,|,\\s*$", "")
+                                     .trim();
+            row.setErrors(novosErros);
+        }
+
+        // Reconstrói a barra de abas para remover o botão "CORINGA"
+        HBox newTabs = createTabs(row);
+        
+        // Substitui a barra de abas antiga pela nova (está na posição 1 do content)
+        content.getChildren().set(1, newTabs);
+
+        // Volta para a Visão Geral automaticamente
+        showVisaoGeral(row);
+    }
+
+
     // --- MÉTODO DAS ABAS ---
     private HBox createTabs(FileTable.FileRow row) {
         HBox tabs = new HBox(20);
@@ -74,7 +97,7 @@ public class FileDetailsView extends ScrollPane {
         // ABA PRINCIPAL COM TODAS AS INFORMAÇÕES
         Button btnGeral = new Button("VISÃO GERAL");
         btnGeral.getStyleClass().addAll("btn-ghost", "tab-active");
-        activeTab = btnGeral; // <--- AGORA O SISTEMA SABE QUEM ESTÁ ATIVO
+        activeTab = btnGeral;
         
         FontIcon iconGeral = new FontIcon(FontAwesomeSolid.EYE);
         iconGeral.setIconColor(Color.web("#27AE60"));
@@ -89,7 +112,7 @@ public class FileDetailsView extends ScrollPane {
 
         if (erros.contains("CORINGA")) {
             Button btnCoringa = createTabButton("CORINGA", FontAwesomeSolid.MAGIC, false);
-            btnCoringa.setOnAction(e -> switchTab(btnCoringa, CoringaDetails.build(row)));
+            btnCoringa.setOnAction(e -> switchTab(btnCoringa, CoringaDetails.build(row, this)));
             tabs.getChildren().add(btnCoringa);
         }
         if (erros.contains("SEM ITEM FILHO")) {

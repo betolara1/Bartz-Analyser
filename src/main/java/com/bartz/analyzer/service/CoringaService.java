@@ -17,23 +17,27 @@ import org.w3c.dom.NodeList;
 @Service
 public class CoringaService {
 
-    private static final String[] corCoringa = { "_CG1", "_CG2", "CG1", "CG2", "CORINGA1", "CORINGA2", "_CG1_", "_CG2_" };
+    private static final String[] corCoringa = { "_CG1", "_CG2", "CG1", "CG2", "_CG1_", "_CG2_" };
+    private static final String[] descCoringa = { "coringa1", "coringa2", "CORINGA1", "CORINGA2" };
+    
+    // Lista completa para buscas e substituições
+    private static String[] getAllCoringas() {
+        String[] all = new String[corCoringa.length + descCoringa.length];
+        System.arraycopy(corCoringa, 0, all, 0, corCoringa.length);
+        System.arraycopy(descCoringa, 0, all, corCoringa.length, descCoringa.length);
+        return all;
+    }
 
     public boolean temCoringa(Document doc) {
+        return temTermo(doc, getAllCoringas());
+    }
+
+    public boolean temTermo(Document doc, String... termos) {
         try {
-            // XPath é o buscador dentro do xml
             XPath xPath = XPathFactory.newInstance().newXPath();
-
-            for (String coringa : corCoringa) {
-                // Expressão: "//*" significa "em qualquer lugar",
-                // "[text()='...']" significa "onde o texto dentro da tag seja exatamente este"
-                // Esta busca diz: "Ache qualquer tag onde o texto OU qualquer atributo (@*)
-                // contenha o coringa"
-                String busca = "//*[contains(text(), '" + coringa + "') or @*[contains(., '" + coringa + "')]]";
-
-                // Executar a busca
+            for (String termo : termos) {
+                String busca = "//*[contains(text(), '" + termo + "') or @*[contains(., '" + termo + "')]]";
                 NodeList lista = (NodeList) xPath.compile(busca).evaluate(doc, XPathConstants.NODESET);
-
                 if (lista.getLength() > 0) {
                     return true;
                 }
@@ -49,7 +53,7 @@ public class CoringaService {
             // XPath é o buscador dentro do xml
             XPath xPath = XPathFactory.newInstance().newXPath();
 
-            for (String coringa : corCoringa) {
+            for (String coringa : getAllCoringas()) {
                 // Expressão: "//*" significa "em qualquer lugar",
                 // "[text()='...']" significa "onde o texto dentro da tag seja exatamente este"
                 String busca = "//*[contains(text(), '" + coringa + "') or @*[contains(., '" + coringa + "')]]";
@@ -117,7 +121,7 @@ public class CoringaService {
         try {
             XPath xPath = XPathFactory.newInstance().newXPath();
 
-            for (String coringa : corCoringa) {
+            for (String coringa : getAllCoringas()) {
                 String busca = "//*[contains(text(), '" + coringa + "') or @*[contains(., '" + coringa + "')]]";
                 NodeList lista = (NodeList) xPath.compile(busca).evaluate(doc, XPathConstants.NODESET);
 

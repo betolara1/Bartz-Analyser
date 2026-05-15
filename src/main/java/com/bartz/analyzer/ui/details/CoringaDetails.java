@@ -8,6 +8,7 @@ import com.bartz.analyzer.api.ErpAPI;
 import com.bartz.analyzer.api.PedidosAPI;
 import com.bartz.analyzer.service.ArquivoService;
 import com.bartz.analyzer.service.CoringaService;
+import com.bartz.analyzer.ui.FileDetailsView;
 import com.bartz.analyzer.ui.FileTable.FileRow;
 
 import javafx.geometry.Insets;
@@ -19,6 +20,7 @@ import javafx.scene.paint.Color;
 import javafx.collections.FXCollections;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,7 +32,7 @@ public class CoringaDetails {
     private static FontIcon waitIcon;
     private static Label placeholder;
 
-    public static Node build(FileRow row) {
+    public static Node build(FileRow row, FileDetailsView view) {
         String filename = row != null ? row.getFilename() : null;
         VBox root = new VBox(20);
         root.setPadding(new Insets(10, 0, 0, 0));
@@ -82,7 +84,21 @@ public class CoringaDetails {
         bottomGrid.add(erpCard, 0, 0);
 
         // Card Direito: Trocar Cor Coringa
-        VBox coringaCard = createCoringaSwapCard(cbSigla, tfNovoCodigo, row, allSiglas);
+        boolean hasCG2 = false;
+        if (row != null && row.getFullPath() != null) {
+            File xmlFile = new File(row.getFullPath());
+            if (xmlFile.exists()) {
+                try {
+                    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                    Document doc = factory.newDocumentBuilder().parse(xmlFile);
+                    hasCG2 = new CoringaService().temTermo(doc, "CG2", "CORINGA2", "coringa2");
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+
+        VBox coringaCard = createCoringaSwapCard(cbSigla, tfNovoCodigo, row, allSiglas, hasCG2, view);
         bottomGrid.add(coringaCard, 1, 0);
 
         root.getChildren().add(bottomGrid);
@@ -322,7 +338,8 @@ public class CoringaDetails {
         return row;
     }
 
-    private static VBox createCoringaSwapCard(ComboBox<String> cbSigla, TextField tfNovoCodigo, FileRow row, List<String> allSiglas) {
+    private static VBox createCoringaSwapCard(ComboBox<String> cbSigla, TextField tfNovoCodigo, FileRow row,    
+                                              List<String> allSiglas, boolean hasCG2, FileDetailsView view) {
         VBox card = new VBox(15);
         card.getStyleClass().add("details-card");
         card.setStyle(card.getStyle() + "-fx-border-color: rgba(243, 156, 18, 0.2);");
@@ -361,97 +378,22 @@ public class CoringaDetails {
         VBox mappings = new VBox(10);
         mappings.getChildren().add(new Label("Trocar Sigla"));
         
-        HBox mappingItem = new HBox(10);
-        mappingItem.setAlignment(Pos.CENTER_LEFT);
-        Label lblMap = new Label(" → ");
-        lblMap.setStyle("-fx-text-fill: #F39C12; -fx-font-weight: bold;");
-        
-        TextField tfMap = new TextField("");
-        tfMap.setPromptText("DIGITE A COR...");
-        tfMap.setStyle("-fx-background-color: #111111; -fx-text-fill: white; -fx-padding: 5 30 5 10; -fx-background-radius: 4;");
-        HBox.setHgrow(tfMap, Priority.ALWAYS);
-
-        // Ícone de busca dentro do TextField
-        FontIcon searchIcon = new FontIcon(FontAwesomeSolid.SEARCH);
-        searchIcon.setIconSize(12);
-        searchIcon.setIconColor(Color.WHITE);
-        searchIcon.setCursor(javafx.scene.Cursor.HAND);
-        
-        StackPane tfWrapper = new StackPane(tfMap, searchIcon);
-        StackPane.setAlignment(searchIcon, Pos.CENTER_RIGHT);
-        StackPane.setMargin(searchIcon, new Insets(0, 10, 0, 0));
-        HBox.setHgrow(tfWrapper, Priority.ALWAYS);
-
-        ComboBox<String> cbMap = new ComboBox<>();
-        cbMap.setPromptText("Selecione...");
-        cbMap.setStyle("-fx-background-color: #111111; -fx-text-fill: white;");
-        
-        // Lógica de busca automática no ERP
-        tfMap.textProperty().addListener((obs, oldVal, newVal) -> {
-            ErpAPI.buscaSiglasParaCombo(newVal, cbMap);
-        });
-
-        // Lógica de busca ao clicar na lupa ou dar Enter
-        searchIcon.setOnMouseClicked(e -> ErpAPI.buscaSiglasParaCombo(tfMap.getText(), cbMap));
-        tfMap.setOnAction(e -> ErpAPI.buscaSiglasParaCombo(tfMap.getText(), cbMap));
-        
-        Button btnConfirm = new Button();
-        btnConfirm.setGraphic(new FontIcon(FontAwesomeSolid.CHECK));
-        btnConfirm.setStyle("-fx-background-color: #222222; -fx-text-fill: #444444; -fx-background-radius: 4;");
-        btnConfirm.setCursor(javafx.scene.Cursor.HAND);
-
-        btnConfirm.setOnAction(e -> {
-            String selected = cbMap.getValue();
-            if (selected == null || !selected.contains("(") || !selected.contains(")")) {
-                return;
+        // Controle de conclusão
+        List<Button> confirmButtons = new ArrayList<>();
+        Runnable checkFinish = () -> {
+            boolean allDone = confirmButtons.stream().allMatch(btn -> btn.isDisable());
+            if (allDone && view != null) {
+                view.finalizeCoringaFlow(row);
             }
-
-            String siglaMM = selected.substring(selected.lastIndexOf("(") + 1, selected.lastIndexOf(")"));
-            
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Confirmar Mapeamento");
-            alert.setHeaderText("Substituir CG1 por " + siglaMM);
-            alert.setContentText("Deseja substituir todas as ocorrências de 'CG1' por '" + siglaMM + "' no arquivo?");
-            
-            DialogPane dp = alert.getDialogPane();
-            dp.setStyle("-fx-background-color: #1A1A1A;");
-            dp.lookupAll(".label").forEach(n -> n.setStyle("-fx-text-fill: white;"));
-
-            alert.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.OK) {
-                    if (row != null && row.getFullPath() != null) {
-                        File xmlFile = new File(row.getFullPath());
-                        if (xmlFile.exists()) {
-                            try {
-                                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-                                Document doc = factory.newDocumentBuilder().parse(xmlFile);
-                                
-                                new CoringaService().substituirSiglaEspecifica(doc, "CG1", siglaMM);
-                                new ArquivoService().salvarArquivo(doc, xmlFile);
-                                
-                                // Feedback visual de sucesso
-                                btnConfirm.setStyle("-fx-background-color: #27AE60; -fx-text-fill: white; -fx-background-radius: 4;");
-                                
-                                Alert success = new Alert(Alert.AlertType.INFORMATION);
-                                success.setTitle("Sucesso");
-                                success.setHeaderText(null);
-                                success.setContentText("Todas as ocorrências de 'CG1' foram substituídas por '" + siglaMM + "'!");
-                                DialogPane sdp = success.getDialogPane();
-                                sdp.setStyle("-fx-background-color: #1A1A1A;");
-                                sdp.lookupAll(".label").forEach(n -> n.setStyle("-fx-text-fill: white;"));
-                                success.showAndWait();
-
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
-                        }
-                    }
-                }
-            });
-        });
-
-        mappingItem.getChildren().addAll(lblMap, tfWrapper, cbMap, btnConfirm);
-        mappings.getChildren().add(mappingItem);
+        };
+        
+        // Sempre adiciona CG1
+        mappings.getChildren().add(createMappingRow("CG1", row, confirmButtons, checkFinish));
+        
+        // Adiciona CG2 se houver no arquivo (calculado no build)
+        if (hasCG2) {
+            mappings.getChildren().add(createMappingRow("CG2", row, confirmButtons, checkFinish));
+        }
 
         // Button
         Button btnApply = new Button("Aplicar Substituição de Cor");
@@ -507,7 +449,7 @@ public class CoringaDetails {
                                 tfNovoCodigo.clear();
                                 
                                 // Se não houver mais itens, desativa a troca de siglas e libera o CG1
-                                if (cbSigla.getItems().isEmpty()) {
+                                if (allSiglas.isEmpty()) {
                                     cbSigla.setDisable(true);
                                     tfNovoCodigo.setDisable(true);
                                     btnApply.setDisable(true);
@@ -515,7 +457,12 @@ public class CoringaDetails {
                                     mappings.setDisable(false);
                                     mappings.setOpacity(1.0);
                                 } else {
-                                    cbSigla.getSelectionModel().selectFirst();
+                                    // Se ainda houver itens (mesmo que em outros filtros), limpa o combo atual para o usuário trocar o filtro
+                                    if (cbSigla.getItems().isEmpty()) {
+                                        cbSigla.setPromptText("TROQUE O FILTRO...");
+                                    } else {
+                                        cbSigla.getSelectionModel().selectFirst();
+                                    }
                                 }
                                 
                                 // Mostra alerta de sucesso
@@ -537,8 +484,8 @@ public class CoringaDetails {
             });
         });
 
-        // Estado Inicial: se houver siglas, desativa os mapeamentos CG1
-        if (!cbSigla.getItems().isEmpty()) {
+        // Estado Inicial: se houver siglas (em qualquer categoria), desativa os mapeamentos CG1
+        if (!allSiglas.isEmpty()) {
             mappings.setDisable(true);
             mappings.setOpacity(0.5);
         } else {
@@ -550,6 +497,119 @@ public class CoringaDetails {
 
         card.getChildren().addAll(header, infoBox, form, btnApply, mappings);
         return card;
+    }
+
+    private static Node createMappingRow(String tag, FileRow row, List<Button> confirmButtons, Runnable onFinish) {
+        HBox mappingItem = new HBox(10);
+        mappingItem.setAlignment(Pos.CENTER_LEFT);
+        Label lblMap = new Label(tag + " → ");
+        lblMap.setStyle("-fx-text-fill: #F39C12; -fx-font-weight: bold;");
+        lblMap.setMinWidth(55);
+        
+        TextField tfMap = new TextField("");
+        tfMap.setPromptText("DIGITE A COR...");
+        tfMap.setStyle("-fx-background-color: #111111; -fx-text-fill: white; -fx-padding: 5 30 5 10; -fx-background-radius: 4;");
+        HBox.setHgrow(tfMap, Priority.ALWAYS);
+
+        // Ícone de busca dentro do TextField
+        FontIcon searchIcon = new FontIcon(FontAwesomeSolid.SEARCH);
+        searchIcon.setIconSize(12);
+        searchIcon.setIconColor(Color.WHITE);
+        searchIcon.setCursor(javafx.scene.Cursor.HAND);
+        
+        StackPane tfWrapper = new StackPane(tfMap, searchIcon);
+        StackPane.setAlignment(searchIcon, Pos.CENTER_RIGHT);
+        StackPane.setMargin(searchIcon, new Insets(0, 10, 0, 0));
+        HBox.setHgrow(tfWrapper, Priority.ALWAYS);
+
+        ComboBox<String> cbMap = new ComboBox<>();
+        cbMap.setPromptText("Selecione...");
+        cbMap.setPrefWidth(200);
+        cbMap.setStyle("-fx-background-color: #111111; -fx-text-fill: white;");
+        
+        // Lógica de busca automática no ERP
+        tfMap.textProperty().addListener((obs, oldVal, newVal) -> {
+            ErpAPI.buscaSiglasParaCombo(newVal, cbMap);
+        });
+
+        // Lógica de busca ao clicar na lupa ou dar Enter
+        searchIcon.setOnMouseClicked(e -> ErpAPI.buscaSiglasParaCombo(tfMap.getText(), cbMap));
+        tfMap.setOnAction(e -> ErpAPI.buscaSiglasParaCombo(tfMap.getText(), cbMap));
+        
+        Button btnConfirm = new Button();
+        btnConfirm.setGraphic(new FontIcon(FontAwesomeSolid.CHECK));
+        btnConfirm.setStyle("-fx-background-color: #222222; -fx-text-fill: #444444; -fx-background-radius: 4;");
+        btnConfirm.setCursor(javafx.scene.Cursor.HAND);
+        
+        confirmButtons.add(btnConfirm);
+
+        btnConfirm.setOnAction(e -> {
+            String selected = cbMap.getValue();
+            if (selected == null || !selected.contains("(") || !selected.contains(")")) {
+                return;
+            }
+
+            String siglaNovo = selected.substring(selected.lastIndexOf("(") + 1, selected.lastIndexOf(")"));
+            String descricaoNovo = selected.substring(0, selected.lastIndexOf("(")).trim();
+            
+            // Determina a tag coringa correspondente (coringa1 para CG1, coringa2 para CG2)
+            String coringaDescTag = tag.equalsIgnoreCase("CG1") ? "coringa1" : "coringa2";
+
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Confirmar Mapeamento");
+            alert.setHeaderText("Substituir " + tag + " e " + coringaDescTag);
+            alert.setContentText("Deseja substituir:\n- '" + tag + "' por '" + siglaNovo + "'\n- '" + coringaDescTag + "' por '" + descricaoNovo + "'?");
+            
+            DialogPane dp = alert.getDialogPane();
+            dp.setStyle("-fx-background-color: #1A1A1A;");
+            dp.lookupAll(".label").forEach(n -> n.setStyle("-fx-text-fill: white;"));
+
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    if (row != null && row.getFullPath() != null) {
+                        File xmlFile = new File(row.getFullPath());
+                        if (xmlFile.exists()) {
+                            try {
+                                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                                Document doc = factory.newDocumentBuilder().parse(xmlFile);
+                                
+                                // Substitui CG1/CG2 pela Sigla (ex: MM)
+                                new CoringaService().substituirSiglaEspecifica(doc, tag, siglaNovo);
+                                
+                                // Substitui coringa1/coringa2 pela Descrição (ex: MARMO)
+                                new CoringaService().substituirSiglaEspecifica(doc, coringaDescTag, descricaoNovo);
+                                
+                                new ArquivoService().salvarArquivo(doc, xmlFile);
+                                
+                                // Feedback visual de sucesso
+                                btnConfirm.setStyle("-fx-background-color: #27AE60; -fx-text-fill: white; -fx-background-radius: 4;");
+                                btnConfirm.setDisable(true);
+                                
+                                Alert success = new Alert(Alert.AlertType.INFORMATION);
+                                success.setTitle("Sucesso");
+                                success.setHeaderText(null);
+                                success.setContentText("Substituições realizadas:\n- " + tag + " → " + siglaNovo + "\n- " + coringaDescTag + " → " + descricaoNovo);
+                                DialogPane sdp = success.getDialogPane();
+                                sdp.setStyle("-fx-background-color: #1A1A1A;");
+                                sdp.lookupAll(".label").forEach(n -> n.setStyle("-fx-text-fill: white;"));
+                                success.showAndWait();
+                                
+                                // Notifica que esta linha terminou
+                                if (onFinish != null) {
+                                    onFinish.run();
+                                }
+
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        mappingItem.getChildren().addAll(lblMap, tfWrapper, cbMap, btnConfirm);
+        return mappingItem;
     }
 
     private static StackPane createIconBox(FontAwesomeSolid icon, String color) {
