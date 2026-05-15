@@ -102,15 +102,17 @@ public class CoringaService {
         return siglas;
     }
 
+    // Metodo que filtra e adiciona somente se o valor for valido
     private void adicionarSeValido(List<String> siglas, String valor) {
         String upper = valor.trim().toUpperCase();
-        if (upper.contains("CHAPA") || upper.contains("FITA") || upper.contains("TAPAFURO") || upper.contains("PAINEL")) {
+        if (upper.contains("CHAPA") || upper.contains("FITA") || upper.contains("TAPAFURO") || upper.contains("PAINEL") || upper.contains("CAPA")) {
             if (!siglas.contains(upper)) {
                 siglas.add(upper);
             }
         }
     }
 
+    // Metodo que substitui uma sigla por outra
     public void substituirSiglaEspecifica(Document doc, String siglaAtual, String novoCodigo) {
         try {
             XPath xPath = XPathFactory.newInstance().newXPath();
